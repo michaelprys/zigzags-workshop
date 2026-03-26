@@ -20,7 +20,7 @@ const isAffordable = computed(() => (storeBalance.balance.gold ?? 0) >= 20000);
 
 const tradeButtonLabel = computed(() => {
     if (!storeAuth.session) return 'No vault access for purchase';
-    if (!isAffordable.value) return 'Not enough gold';
+    if (!isAffordable.value) return 'Not enough gold. Top up.';
 
     return 'CONFIRM PURCHASE';
 });
@@ -31,7 +31,7 @@ const handleTrade = async () => {
     try {
         const success = await storeGoods.purchaseInvitation();
         if (success) {
-            await delay(1000);
+            await delay(1500);
             await storeInventory.checkInvitation();
             dialog.value = false;
         }

@@ -50,102 +50,116 @@ onMounted(async () => {
 </script>
 
 <template>
-    <q-page>
-        <section id="good-details" v-if="isLoaded">
-            <div class="main-wrapper">
-                <div class="bg-frame" :class="isAuth ? 'bg-black-market' : 'bg-workshop'"></div>
-                <div class="details-layout">
-                    <div class="visual-column">
-                        <div class="product-frame shadow-24">
-                            <div
-                                v-if="imgLoading"
-                                class="absolute-full flex flex-center custom-loader">
-                                <q-spinner-dots color="secondary" size="3rem" />
-                            </div>
-                            <img
-                                ref="imgRef"
-                                class="product-img"
-                                :class="{ 'img-hidden': imgLoading }"
-                                :src="currentGood?.image_url || ''"
-                                @mousemove="moveImage"
-                                @mouseleave="resetImage"
-                                @load="imgLoading = false" />
-                        </div>
-                    </div>
-                    <div class="info-column">
-                        <div class="content-panel">
-                            <div class="row justify-between no-wrap q-mb-md items-start">
-                                <div class="column">
-                                    <span
-                                        class="text-overline text-secondary text-weight-bolder letter-spacing-3">
-                                        {{ currentGood?.category }}
-                                    </span>
-                                    <h1 class="text-h4 text-weight-bolder text-white q-ma-none">
-                                        {{ currentGood?.name }}
-                                    </h1>
-                                </div>
-                                <q-btn
-                                    flat
-                                    round
-                                    icon="close"
-                                    color="grey-6"
-                                    class="close-button"
-                                    @click="router.back()" />
-                            </div>
-                            <p class="text-body1 text-grey-4 line-height-relaxed">
-                                {{ currentGood?.description }}
-                            </p>
-                            <div class="lore-section q-mt-lg">
+    <q-page class="good-details-page">
+        <Transition name="fade" mode="out-in">
+            <section id="good-details" v-if="isLoaded" key="content">
+                <div class="main-wrapper">
+                    <div class="bg-frame" :class="isAuth ? 'bg-black-market' : 'bg-workshop'"></div>
+                    <div class="details-layout">
+                        <div class="visual-column">
+                            <div class="product-frame shadow-24">
                                 <div
-                                    class="text-caption text-secondary text-weight-bolder uppercase">
-                                    Artifact Data
+                                    v-if="imgLoading"
+                                    class="absolute-full flex flex-center custom-loader">
+                                    <q-spinner-dots color="secondary" size="3rem" />
                                 </div>
-                                <p class="text-caption text-grey-6 q-mt-xs q-ma-none italic">
-                                    {{ currentGood?.source }}
-                                </p>
+                                <img
+                                    ref="imgRef"
+                                    class="product-img"
+                                    :class="{ 'img-hidden': imgLoading }"
+                                    :src="currentGood?.image_url || ''"
+                                    @mousemove="moveImage"
+                                    @mouseleave="resetImage"
+                                    @load="imgLoading = false" />
                             </div>
-                            <div class="action-footer row items-center justify-between q-mt-xl">
-                                <div class="price-section">
-                                    <span class="text-caption text-grey-7 uppercase block">
-                                        Exchange Rate
-                                    </span>
-                                    <div class="text-h4 text-secondary text-weight-bolder">
-                                        {{ currentGood?.price }}
-                                        <span class="text-h6 text-weight-light">Gold</span>
+                        </div>
+                        <div class="info-column">
+                            <div class="content-panel">
+                                <div class="row justify-between no-wrap q-mb-md items-start">
+                                    <div class="column">
+                                        <span
+                                            class="text-overline text-secondary text-weight-bolder letter-spacing-3">
+                                            {{ currentGood?.category }}
+                                        </span>
+                                        <h1 class="text-h4 text-weight-bolder text-white q-ma-none">
+                                            {{ currentGood?.name }}
+                                        </h1>
                                     </div>
+                                    <q-btn
+                                        flat
+                                        round
+                                        icon="close"
+                                        color="grey-6"
+                                        class="close-button"
+                                        @click="router.back()" />
                                 </div>
-                                <q-btn
-                                    class="stash-button"
-                                    unelevated
-                                    color="secondary"
-                                    text-color="dark"
-                                    label="Add to stash"
-                                    @click="currentGood ? addToStash(currentGood) : null" />
+                                <p class="text-body1 text-grey-4 line-height-relaxed">
+                                    {{ currentGood?.description }}
+                                </p>
+                                <div class="lore-section q-mt-lg">
+                                    <div
+                                        class="text-caption text-secondary text-weight-bolder uppercase">
+                                        Artifact Data
+                                    </div>
+                                    <p class="text-caption text-grey-6 q-mt-xs q-ma-none italic">
+                                        {{ currentGood?.source }}
+                                    </p>
+                                </div>
+                                <div class="action-footer row items-center justify-between q-mt-xl">
+                                    <div class="price-section">
+                                        <span class="text-caption text-grey-7 uppercase block">
+                                            Exchange Rate
+                                        </span>
+                                        <div class="text-h4 text-secondary text-weight-bolder">
+                                            {{ currentGood?.price }}
+                                            <span class="text-h6 text-weight-light">Gold</span>
+                                        </div>
+                                    </div>
+                                    <q-btn
+                                        class="stash-button"
+                                        unelevated
+                                        color="secondary"
+                                        text-color="dark"
+                                        label="Add to stash"
+                                        @click="currentGood ? addToStash(currentGood) : null" />
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
+            </section>
+
+            <div v-else class="loading-container column flex-center" key="loader">
+                <q-spinner-hourglass color="secondary" size="4rem" />
+                <div class="text-h6 text-secondary q-mt-md uppercase letter-spacing-2">
+                    Loading your item...
+                </div>
             </div>
-        </section>
-        <div v-else class="loading-container column flex-center">
-            <q-spinner-hourglass color="secondary" size="4rem" />
-            <div class="text-h6 text-secondary q-mt-md uppercase letter-spacing-2">
-                Loading your item...
-            </div>
-        </div>
+        </Transition>
     </q-page>
 </template>
 
 <style scoped lang="scss">
+.good-details-page {
+    display: flex;
+    flex-direction: column;
+}
+
 #good-details {
+    flex-grow: 1;
     padding-top: 3.125rem;
     padding-bottom: 7.5rem;
     display: flex;
     justify-content: center;
     position: relative;
     z-index: 1;
-    min-height: calc(100vh - 7.5rem);
     overflow: hidden;
+}
+
+.loading-container {
+    flex-grow: 1;
+    width: 100%;
+    min-height: calc(100vh - 10rem);
 }
 
 .main-wrapper {
@@ -171,7 +185,7 @@ onMounted(async () => {
     mask-image: radial-gradient(
         ellipse at center,
         #fff 0%,
-        rgb(255 255 255 / 50%) 40%,
+        rgba(255, 255, 255, 0.5) 40%,
         transparent 85%
     );
 }
@@ -179,7 +193,6 @@ onMounted(async () => {
 .bg-workshop {
     background-image: url('src/assets/images/good-details/bg-workshop-details.avif');
 }
-
 .bg-black-market {
     background-image: url('src/assets/images/good-details/bg-black-market-details.avif');
 }
@@ -203,21 +216,19 @@ onMounted(async () => {
     background: transparent !important;
     border-radius: 0.75rem;
     overflow: hidden;
-    border: 0.0625rem solid rgb(255 255 255 / 10%);
+    border: 0.0625rem solid rgba(255, 255, 255, 0.1);
 }
 
 .custom-loader {
     z-index: 1;
-    background: rgb(255 255 255 / 2%);
+    background: rgba(255, 255, 255, 0.02);
 }
 
 .product-img {
     width: 100%;
     height: 100%;
-    background: transparent !important;
     object-fit: cover;
     transition: transform 0.1s ease;
-
     &.img-hidden {
         opacity: 0;
     }
@@ -240,13 +251,6 @@ onMounted(async () => {
     border: 0.0625rem solid rgb(255 255 255 / 12%);
 }
 
-.lore-section {
-    padding: 1.25rem 1.75rem;
-    background: rgb(0 0 0 / 20%);
-    border-radius: 0.75rem;
-    border-left: 0.125rem solid rgba($secondary, 0.5);
-}
-
 .stash-button {
     height: 3.5rem;
     font-size: 1rem;
@@ -255,12 +259,20 @@ onMounted(async () => {
     border-radius: 0.5rem;
 }
 
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
 @media (width <= 64rem) {
     .visual-column {
         max-width: 26.25rem;
         width: 100%;
     }
-
     .content-panel {
         padding: 2.5rem;
     }
@@ -272,7 +284,6 @@ onMounted(async () => {
         gap: 2rem;
         text-align: center;
     }
-
     .stash-button {
         width: 100%;
     }

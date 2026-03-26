@@ -25,17 +25,18 @@ const accessVault = async () => {
                 password: vaultKey.value,
             });
 
+            await delay(1500);
+
             if (error) {
-                callToast('Wrong vault key or mailbox. Try again', false);
+                callToast("Wrong key or mailbox. Check 'em again!", false);
             } else {
                 await router.push({ name: 'vault' });
-                callToast('Welcome to vault', true);
+                callToast("You're in!", true);
             }
         }
     } catch (err) {
         console.error(err);
     } finally {
-        await delay(1000);
         pendingUser.value = false;
     }
 };
@@ -45,16 +46,17 @@ const accessAsGuest = async () => {
     try {
         const { error } = await supabaseApi.auth.signInAnonymously();
 
+        await delay(1500);
+
         if (error) {
-            callToast('Guest access failed', false);
+            callToast('Gears are jammed!', false);
         } else {
             await router.push({ name: 'vault' });
-            callToast('Welcome, Honorable Guest!', true);
+            callToast('Heh-heh! A fresh customer!', true);
         }
     } catch (err) {
         console.error(err);
     } finally {
-        await delay(1000);
         pendingAnonymousUser.value = false;
     }
 };
