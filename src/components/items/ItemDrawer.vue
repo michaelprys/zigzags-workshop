@@ -24,6 +24,7 @@ const menuList = [
         <div class="column full-height no-wrap bg-dark">
             <div class="flex justify-end q-pa-md">
                 <q-btn
+                    class="icon-close"
                     icon="close"
                     flat
                     dense
@@ -55,6 +56,10 @@ const menuList = [
     display: block;
     color: inherit;
     text-decoration: none;
+}
+
+.icon-close {
+    border-radius: 0.3125rem;
 }
 
 :deep(.q-drawer) {

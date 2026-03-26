@@ -2,7 +2,7 @@
 import { useManageStash } from 'src/composables/useManageStash';
 import { useTransition } from 'src/composables/useTransition';
 import { useStoreGoods, type Good } from 'stores/goods.store';
-import { delayUtils } from 'src/utils/delay.utils';
+import { delay } from 'src/utils/delay.utils';
 import { ref, watch } from 'vue';
 
 const { transitionName, applyTransition } = useTransition();
@@ -28,7 +28,7 @@ watch(
                     if (!props.isPending) {
                         imgLoaded.value[good.id] = true;
                     } else {
-                        await delayUtils(200);
+                        await delay(200);
                         imgLoaded.value[good.id] = true;
                     }
                 })();

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onBeforeUnmount, ref, watch, watchEffect } from 'vue';
-import { delayUtils } from 'src/utils/delay.utils';
 import { useStoreGoods } from 'stores/goods.store';
+import { delay } from 'src/utils/delay.utils';
 import { useQuery } from '@pinia/colada';
 
 type Good = {
@@ -39,7 +39,7 @@ watch(
                 if (img.complete) {
                     imgLoaded.value[good.id] = true;
                 } else {
-                    await delayUtils(200);
+                    await delay(200);
                     imgLoaded.value[good.id] = true;
                 }
             };

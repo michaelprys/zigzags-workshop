@@ -1,7 +1,7 @@
 import type { QNotifyCreateOptions } from 'quasar';
 import { Notify } from 'quasar';
 
-export const callToastUtils = (
+export const callToast = (
     message: string,
     isSuccess: boolean,
     position: QNotifyCreateOptions['position'] = 'bottom-right',

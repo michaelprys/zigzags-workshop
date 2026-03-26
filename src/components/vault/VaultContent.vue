@@ -189,12 +189,15 @@ const handleSlots = async (event: DraggableEvent) => {
     @media (width <= 75rem) {
         grid-template-columns: repeat(8, 5.25rem);
     }
+
     @media (width <= 61.25rem) {
         grid-template-columns: repeat(6, 5.25rem);
     }
+
     @media (width <= $breakpoint-sm) {
         grid-template-columns: repeat(5, 5.25rem);
     }
+
     @media (width <= $breakpoint-xs) {
         grid-template-columns: repeat(3, 5.25rem);
     }

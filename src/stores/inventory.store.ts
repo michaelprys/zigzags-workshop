@@ -36,7 +36,9 @@ export const useStoreInventory = defineStore('inventory', () => {
     const totalInventoryGoods = ref(0);
     const inventoryGoods = ref<InventoryItem[]>([]);
     const invitation = ref<Invitation | null>(null);
-    const totalInventoryPages = computed(() => Math.ceil(totalInventoryGoods.value / 55));
+    const totalInventoryPages = computed(() =>
+        Math.max(1, Math.ceil(totalInventoryGoods.value / 55)),
+    );
 
     const saveGoodsToInventory = async () => {
         pending.value = true;
@@ -75,7 +77,12 @@ export const useStoreInventory = defineStore('inventory', () => {
             const {
                 data: { user },
             } = await supabaseApi.auth.getUser();
-            if (!user) return;
+            if (!user) {
+                inventoryGoods.value = [];
+                totalInventoryGoods.value = 0;
+
+                return;
+            }
 
             const start = (currentPage - 1) * inventoryGoodsPerPage;
             const end = start + inventoryGoodsPerPage - 1;
@@ -148,7 +155,11 @@ export const useStoreInventory = defineStore('inventory', () => {
         const {
             data: { user },
         } = await supabaseApi.auth.getUser();
-        if (!user) return;
+        if (!user) {
+            invitation.value = null;
+
+            return;
+        }
 
         const { data } = await supabaseApi
             .from('user_goods')

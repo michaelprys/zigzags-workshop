@@ -7,7 +7,7 @@ import { useStoreInventory } from 'stores/inventory.store';
 import type { PaymentType } from 'stores/balance.store';
 import { useStoreBalance } from 'stores/balance.store';
 import { useRoute, useRouter } from 'vue-router';
-import { onMounted, ref, watch } from 'vue';
+import { onMounted, ref, unref } from 'vue';
 import type { QForm } from 'quasar';
 
 const topUpForm = ref<QForm | null>(null);
@@ -17,6 +17,7 @@ const storeBalance = useStoreBalance();
 const route = useRoute();
 const router = useRouter();
 const isOpen = ref(false);
+
 const {
     paymentTypes,
     paymentType,
@@ -27,6 +28,7 @@ const {
     decrement,
     calculatedAmount,
 } = useTopUpState();
+
 const { pending, handlePayment } = useTopUpPayment(paymentType, topUpAmount, minAmounts);
 
 const preventIncorrectChars = (e: KeyboardEvent) => {
@@ -35,42 +37,30 @@ const preventIncorrectChars = (e: KeyboardEvent) => {
 
 const handlePaste = (e: ClipboardEvent) => {
     const pastedVal = e.clipboardData?.getData('text');
-
     if (pastedVal && !/^\d+$/.test(pastedVal)) e.preventDefault();
 };
 
-onMounted(() => {
-    void (async () => {
-        const query = route.query;
+onMounted(async () => {
+    await storeBalance.displayBalance();
 
-        if (query.session_id && query.status === 'success') {
-            const amount = Number(query.amount);
-            const pType = query.paymentType as PaymentType;
+    const query = route.query;
+    if (query.session_id && query.status === 'success') {
+        const amount = Number(query.amount);
+        const pType = query.paymentType as PaymentType;
 
-            if (!isNaN(amount) && pType) {
-                await storeBalance.topUpBalance(
-                    query.session_id as string,
-                    'success',
-                    amount,
-                    pType,
-                );
-                await router.replace({ query: {} });
-            }
+        if (!isNaN(amount) && pType) {
+            await storeBalance.topUpBalance(query.session_id as string, 'success', amount, pType);
+            await router.replace({ query: {} });
         }
-    })();
+    }
 });
-
-watch(
-    () => storeBalance.balance,
-    () => {
-        void storeBalance.displayBalance();
-    },
-    { immediate: true },
-);
 
 const onSubmit = async () => {
     if (topUpForm.value) {
-        await handlePayment(topUpForm.value);
+        const isValid = await topUpForm.value.validate();
+        if (isValid) {
+            await handlePayment(topUpForm.value);
+        }
     }
 };
 
@@ -86,6 +76,14 @@ const handlePrevPage = async () => {
         currentPage.value--;
         await loadPaginatedInventoryGoods();
     }
+};
+
+const getMinLimit = (): number => {
+    const type = unref(paymentType)?.value;
+    const limits = unref(minAmounts) as Record<string, number> | undefined;
+    if (!type || !limits) return 0;
+
+    return limits[type] ?? 0;
 };
 </script>
 
@@ -110,13 +108,7 @@ const handlePrevPage = async () => {
                         </h2>
                         <p class="text-caption text-grey-6 q-mt-xs">Increase your gold reserves</p>
                     </div>
-                    <q-form
-                        ref="topUpForm"
-                        @submit.prevent="
-                            () => {
-                                void onSubmit();
-                            }
-                        ">
+                    <q-form ref="topUpForm" @submit.prevent="onSubmit">
                         <div class="select-box q-mt-lg">
                             <q-select
                                 v-model="paymentType"
@@ -128,10 +120,29 @@ const handlePrevPage = async () => {
                                 label="Payment Method"
                                 label-color="primary"
                                 class="custom-select"
-                                :rules="[
-                                    (val: { value: string } | null) => !!val?.value || 'Required',
-                                ]"
-                                @update:model-value="resetAmount" />
+                                :rules="[(val: any) => !!val?.value || 'Required']"
+                                @update:model-value="resetAmount">
+                                <template #prepend>
+                                    <q-icon
+                                        v-if="(paymentType as any)?.icon"
+                                        :name="(paymentType as any).icon"
+                                        color="secondary"
+                                        size="1.25rem" />
+                                </template>
+                                <template #option="scope">
+                                    <q-item v-bind="scope.itemProps">
+                                        <q-item-section avatar style="min-width: 2rem">
+                                            <q-icon
+                                                :name="scope.opt.icon"
+                                                color="secondary"
+                                                size="1.25rem" />
+                                        </q-item-section>
+                                        <q-item-section>
+                                            <q-item-label>{{ scope.opt.label }}</q-item-label>
+                                        </q-item-section>
+                                    </q-item>
+                                </template>
+                            </q-select>
                         </div>
                         <div class="amount-control-wrapper column items-center q-mt-sm">
                             <div class="text-caption text-grey-5 uppercase letter-spacing-1">
@@ -144,10 +155,7 @@ const handlePrevPage = async () => {
                                 <q-btn
                                     :disable="
                                         !paymentType?.value ||
-                                        topUpAmount <=
-                                            (paymentType
-                                                ? (minAmounts[paymentType.value as string] ?? 0)
-                                                : 0)
+                                        (topUpAmount as number) <= getMinLimit()
                                     "
                                     icon="remove"
                                     color="primary"
@@ -212,11 +220,7 @@ const handlePrevPage = async () => {
                         color="primary"
                         class="nav-btn"
                         :disable="currentPage <= 1"
-                        @click="
-                            () => {
-                                void handlePrevPage();
-                            }
-                        " />
+                        @click="handlePrevPage" />
                     <div class="page-info text-primary text-weight-bolder uppercase">
                         {{ currentPage }} / {{ storeInventory.totalInventoryPages }}
                     </div>
@@ -228,26 +232,13 @@ const handlePrevPage = async () => {
                         color="primary"
                         class="nav-btn"
                         :disable="currentPage >= storeInventory.totalInventoryPages"
-                        @click="
-                            () => {
-                                void handleNextPage();
-                            }
-                        " />
+                        @click="handleNextPage" />
                 </div>
             </div>
             <div class="side-box justify-end">
                 <div class="balance-panel">
-                    <div
-                        class="balance-wrapper"
-                        style="display: flex; justify-content: flex-end; min-width: 8.75rem">
-                        <div
-                            v-if="storeBalance.pending && !storeBalance.balance.gold"
-                            class="row q-gutter-x-md no-wrap items-center">
-                            <q-skeleton type="text" width="2.1875rem" dark />
-                            <q-skeleton type="text" width="2.1875rem" dark />
-                            <q-skeleton type="text" width="2.1875rem" dark />
-                        </div>
-                        <ItemBalance v-else />
+                    <div class="balance-wrapper">
+                        <ItemBalance />
                     </div>
                     <div class="separator-v"></div>
                     <q-btn
@@ -359,8 +350,10 @@ const handlePrevPage = async () => {
     border-radius: 0.5rem;
 }
 
-.balance-wrapper :deep(.balance-row) {
-    gap: 1rem;
+.balance-wrapper {
+    display: flex;
+    justify-content: flex-end;
+    min-width: 8rem;
 }
 
 .separator-v {

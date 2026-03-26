@@ -52,59 +52,96 @@ watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
                             v-for="(good, goodIdx) in storeGoods.stashGoods"
                             :key="good.id"
                             class="card">
-                            <q-img class="img shadow-24" :src="good.image_url ?? ''" ratio="1" />
-                            <div class="inner q-ml-lg">
-                                <div class="info column justify-center">
-                                    <span class="text-h6 text-primary q-mb-xs text-weight-bold">
+                            <div class="card-header-mobile">
+                                <div class="column">
+                                    <h3
+                                        class="text-h6 text-primary text-weight-bolder q-ma-none line-height-1">
                                         {{ good.name }}
-                                    </span>
+                                    </h3>
                                     <span
-                                        class="text-caption text-grey-6 uppercase letter-spacing-1">
+                                        class="text-caption text-grey-7 uppercase letter-spacing-1">
                                         {{ good.category }}
                                     </span>
-                                    <div class="q-mt-md">
-                                        <span class="text-secondary text-weight-bolder text-h6">
-                                            {{ good.price }}
-                                        </span>
-                                        <span class="text-grey-7 q-ml-sm text-caption uppercase">
-                                            Gold / unit
+                                </div>
+                                <q-btn
+                                    flat
+                                    round
+                                    dense
+                                    color="grey-8"
+                                    icon="close"
+                                    size="sm"
+                                    class="remove-btn-dynamic"
+                                    @click="removeFromStash(goodIdx)" />
+                            </div>
+
+                            <div class="card-inner">
+                                <div class="image-box">
+                                    <q-img
+                                        class="img shadow-24"
+                                        :src="good.image_url ?? ''"
+                                        ratio="1" />
+                                </div>
+
+                                <div class="content-box">
+                                    <div class="top-info desktop-only">
+                                        <h3
+                                            class="text-h6 text-primary text-weight-bolder q-ma-none line-height-1">
+                                            {{ good.name }}
+                                        </h3>
+                                        <span
+                                            class="text-caption text-grey-7 uppercase letter-spacing-1">
+                                            {{ good.category }}
                                         </span>
                                     </div>
-                                </div>
-                                <div class="actions">
-                                    <q-btn
-                                        flat
-                                        color="grey-8"
-                                        size="sm"
-                                        round
-                                        icon="close"
-                                        class="hover-red"
-                                        @click="removeFromStash(goodIdx)" />
-                                    <div class="quantity-control flex items-center no-wrap">
-                                        <q-btn
-                                            dense
-                                            icon="remove"
-                                            flat
-                                            round
-                                            color="secondary"
-                                            size="sm"
-                                            :disable="(good.quantity ?? 0) <= 1"
-                                            @click="decreaseGoodQuantity(good)" />
-                                        <span class="q-mx-md text-weight-bold text-h6 value-text">
-                                            {{ good.quantity }}
-                                        </span>
-                                        <q-btn
-                                            dense
-                                            icon="add"
-                                            flat
-                                            round
-                                            color="secondary"
-                                            size="sm"
-                                            :disable="(good.quantity ?? 0) >= 5"
-                                            @click="increaseGoodQuantity(good)" />
+
+                                    <div class="bottom-actions">
+                                        <div class="price-display">
+                                            <span class="text-secondary text-weight-bolder text-h5">
+                                                {{ good.price }}
+                                            </span>
+                                            <span
+                                                class="text-grey-8 q-ml-xs text-caption uppercase">
+                                                Gold
+                                            </span>
+                                        </div>
+
+                                        <div class="quantity-control flex items-center no-wrap">
+                                            <q-btn
+                                                dense
+                                                icon="remove"
+                                                flat
+                                                round
+                                                color="secondary"
+                                                size="sm"
+                                                :disable="(good.quantity ?? 0) <= 1"
+                                                @click="decreaseGoodQuantity(good)" />
+                                            <span
+                                                class="q-mx-sm text-weight-bold text-h6 value-text">
+                                                {{ good.quantity }}
+                                            </span>
+                                            <q-btn
+                                                dense
+                                                icon="add"
+                                                flat
+                                                round
+                                                color="secondary"
+                                                size="sm"
+                                                :disable="(good.quantity ?? 0) >= 5"
+                                                @click="increaseGoodQuantity(good)" />
+                                        </div>
                                     </div>
                                 </div>
                             </div>
+
+                            <q-btn
+                                flat
+                                round
+                                dense
+                                color="grey-8"
+                                icon="close"
+                                size="sm"
+                                class="remove-btn-dynamic desktop-only"
+                                @click="removeFromStash(goodIdx)" />
                         </li>
                     </ul>
                 </div>
@@ -173,8 +210,7 @@ watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
         radial-gradient(circle at top left, rgb(255 255 255 / 3%) 0%, transparent 40%),
         linear-gradient(180deg, #161616 0%, #0d0d0d 100%);
     border: 0.0625rem solid rgb(255 255 255 / 8%);
-    border-radius: 0.75rem;
-    overflow: hidden;
+    border-radius: 1rem;
 }
 
 .main-panel {
@@ -188,37 +224,86 @@ watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
 }
 
 .card {
-    display: flex;
-    padding: 1.25rem 1.75rem;
+    position: relative;
+    padding: 2rem;
     border-bottom: 0.0625rem solid rgb(255 255 255 / 5%);
     transition: background 0.3s ease;
+
+    &:hover {
+        background: rgb(255 255 255 / 2%);
+    }
 }
 
-.card:hover {
-    background: rgb(255 255 255 / 1.5%);
+.card-header-mobile {
+    display: none;
 }
 
-.card:last-child {
-    border-bottom: none;
+.card-inner {
+    display: flex;
+    gap: 2rem;
 }
 
 .img {
-    width: 7.5rem;
-    height: 7.5rem;
-    border-radius: 0.375rem;
-    border: 0.0625rem solid rgb(255 255 255 / 10%);
+    width: 9rem;
+    height: 9rem;
+    border-radius: 0.75rem;
+    border: 0.0625rem solid rgb(255 255 255 / 12%);
     background: #000;
 }
 
-.inner {
+.content-box {
     display: flex;
+    flex-direction: column;
     justify-content: space-between;
     flex: 1;
 }
 
+.remove-btn-dynamic {
+    position: absolute;
+    z-index: 10;
+    min-width: 1.75rem;
+    min-height: 1.75rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    background: rgb(0 0 0 / 30%);
+    pointer-events: auto;
+    top: 1rem;
+    right: 1rem;
+    border-radius: 50%;
+
+    &:hover {
+        background: rgba($negative, 0.2) !important;
+        color: $negative !important;
+    }
+
+    :deep(.q-focus-helper) {
+        display: none !important;
+    }
+}
+
+.bottom-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.quantity-control {
+    box-shadow: inset 0 0.125rem 0.25rem rgb(0 0 0 / 50%);
+    background: rgb(0 0 0 / 40%);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.625rem;
+    border: 0.0625rem solid rgb(255 255 255 / 6%);
+}
+
+.value-text {
+    min-width: 1.75rem;
+    color: $primary;
+    text-align: center;
+}
+
 .panel-price {
     position: sticky;
-    width: 25rem;
+    width: 26rem;
     border: 0.0625rem solid rgba($secondary, 0.2);
     top: 2rem;
 }
@@ -227,70 +312,29 @@ watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
     display: flex;
     justify-content: space-between;
     align-items: center;
-}
 
-.price-row .label {
-    font-size: 0.8rem;
-    letter-spacing: 0.0625rem;
-    color: #888;
-    text-transform: uppercase;
-}
+    .label {
+        font-size: 0.85rem;
+        color: #777;
+        text-transform: uppercase;
+    }
 
-.price-row .value {
-    font-size: 1.1rem;
-    color: #eee;
+    .value {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #fff;
+    }
 }
 
 .price-glow {
-    text-shadow: 0 0 0.9375rem rgba($secondary, 0.3);
-}
-
-.actions {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: flex-end;
-}
-
-.quantity-control {
-    box-shadow: inset 0 0.125rem 0.25rem rgb(0 0 0 / 50%);
-    background: rgb(0 0 0 / 40%);
-    padding: 0.25rem 0.625rem;
-    border-radius: 0.375rem;
-    border: 0.0625rem solid rgb(255 255 255 / 6%);
-}
-
-.value-text {
-    color: $primary;
-}
-
-.separator-custom {
-    height: 0.0625rem;
-    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 10%), transparent);
+    text-shadow: 0 0 1rem rgba($secondary, 0.4);
 }
 
 .trade-btn {
-    height: 3.625rem;
+    height: 4rem;
+    font-size: 1.1rem;
     font-weight: 900;
-    border-radius: 0.375rem;
-    letter-spacing: 0.125rem;
-    box-shadow: 0 0.25rem 0.9375rem rgb(0 0 0 / 30%);
-}
-
-.hover-red:hover {
-    color: $negative !important;
-}
-
-.letter-spacing-1 {
-    letter-spacing: 0.0625rem;
-}
-
-.letter-spacing-2 {
-    letter-spacing: 0.125rem;
-}
-
-.letter-spacing-3 {
-    letter-spacing: 0.1875rem;
+    border-radius: 0.5rem;
 }
 
 @media (width <= 64rem) {
@@ -310,20 +354,42 @@ watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
 
 @media (width <= 37.5rem) {
     .card {
-        flex-direction: column;
-        align-items: center;
-        text-align: center;
+        padding: 1.5rem;
     }
 
-    .inner {
-        flex-direction: column;
-        padding: 1.5rem 0 0;
-        margin-left: 0;
+    .card-header-mobile {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        width: 100%;
+        margin-bottom: 1.25rem;
     }
 
-    .actions {
-        align-items: center;
-        gap: 1.5rem;
+    .remove-btn-dynamic {
+        position: relative;
+        top: 0;
+        right: 0;
+        background: rgb(255 255 255 / 5%);
+        flex-shrink: 0;
+    }
+
+    .desktop-only {
+        display: none !important;
+    }
+
+    .card-inner {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .img {
+        width: 100%;
+        height: 14rem;
+    }
+
+    .bottom-actions {
+        padding-top: 1rem;
+        border-top: 1px solid rgb(255 255 255 / 5%);
     }
 }
 </style>

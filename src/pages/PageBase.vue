@@ -1,23 +1,56 @@
 <script setup lang="ts">
 import BaseBlackMarket from 'src/components/base/BaseBlackMarket.vue';
 import BaseFeatured from 'src/components/base/BaseFeatured.vue';
+import { default as supabase } from 'src/api/supabase.api';
 import BaseIntro from 'src/components/base/BaseIntro.vue';
+import { useStoreGoods } from 'stores/goods.store';
+import { useRouter } from 'vue-router';
 import { ref } from 'vue';
 
-const model = ref('');
-const suggestions = ref<{ label: string; value: string }[]>([]);
+interface Suggestion {
+    label: string;
+    value: string;
+}
 
-const filterFn = (val: string, doneFn: (callbackFn: () => void) => void, abortFn: () => void) => {
+const router = useRouter();
+const storeGoods = useStoreGoods();
+const model = ref<string | null>(null);
+const suggestions = ref<Suggestion[]>([]);
+
+const filterFn = (
+    val: string,
+    doneFn: (callbackFn: () => void) => void,
+    abortFn: () => void,
+): void => {
     if (val.length < 2) {
         abortFn();
 
         return;
     }
-    doneFn(() => {});
+
+    void storeGoods.loadSuggestedGoods(val).then((data) => {
+        doneFn(() => {
+            suggestions.value = data;
+        });
+    });
 };
 
-const goToLink = (val: string) => {
-    console.log('Go to:', val);
+const goToLink = async (slug: string): Promise<void> => {
+    const { data } = await supabase
+        .from('goods')
+        .select('category, slug')
+        .eq('slug', slug)
+        .single<{ category: string; slug: string }>();
+
+    if (data) {
+        void router.push({
+            name: 'good-details',
+            params: {
+                category: data.category,
+                slug: data.slug,
+            },
+        });
+    }
 };
 </script>
 

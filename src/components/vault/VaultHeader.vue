@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { callToastUtils } from 'src/utils/callToast.utils';
 import { useStoreInventory } from 'stores/inventory.store';
+import { callToast } from 'src/utils/callToast.utils';
 import { useStoreAuth } from 'stores/auth.store';
 import supabaseApi from 'src/api/supabase.api';
 import { useRouter } from 'vue-router';
@@ -16,32 +16,45 @@ const storeAuth = useStoreAuth();
 const storeInventory = useStoreInventory();
 const router = useRouter();
 const $q = useQuasar();
-const userFaction = ref<string>('');
+
+const userFaction = ref<string>('outsiders');
 const userName = ref<string>('');
 
 const syncUserData = () => {
-    const metadata = storeAuth.session?.user_metadata as UserMetadata | undefined;
+    const session = storeAuth.session;
+    const metadata = session?.user_metadata as UserMetadata | undefined;
 
-    if (!metadata) return;
+    if (!session || !metadata) {
+        userFaction.value = 'outsiders';
+        userName.value = '';
 
-    if (metadata.first_name) userName.value = metadata.first_name;
+        return;
+    }
 
-    if (metadata.faction === 'Horde') userFaction.value = 'horde';
-    else if (metadata.faction === 'Alliance') userFaction.value = 'alliance';
-    else if (metadata.faction === 'No faction (Outsiders)') userFaction.value = 'outsiders';
+    if (metadata.first_name) {
+        userName.value = metadata.first_name;
+    }
+
+    const factionName = metadata.faction;
+    if (factionName === 'Horde') {
+        userFaction.value = 'horde';
+    } else if (factionName === 'Alliance') {
+        userFaction.value = 'alliance';
+    } else {
+        userFaction.value = 'outsiders';
+    }
 };
 
 const leaveVault = async () => {
     const { error } = await supabaseApi.auth.signOut();
-
     if (error) {
-        callToastUtils('Unable to leave the vault', false);
+        callToast('Unable to leave the vault', false);
     } else {
         await storeAuth.checkSession();
-        callToastUtils('Safe travels!', true);
+        callToast('Safe travels!', true);
         storeInventory.inventoryGoods = [];
         void router.push({ name: 'access-vault' });
-        userFaction.value = '';
+        userFaction.value = 'outsiders';
         userName.value = '';
     }
 };
@@ -65,10 +78,8 @@ const alertExit = () => {
     });
 };
 
-const imgSrc = (ext: string) => {
-    if (!userFaction.value) return '';
-
-    return new URL(`/src/assets/images/vault/${userFaction.value}.${ext}`, import.meta.url).href;
+const getFactionIcon = () => {
+    return new URL(`../../assets/images/vault/${userFaction.value}.avif`, import.meta.url).href;
 };
 
 watch(() => storeAuth.session, syncUserData, { immediate: true, deep: true });
@@ -77,32 +88,33 @@ watch(() => storeAuth.session, syncUserData, { immediate: true, deep: true });
 <template>
     <div class="header-grid">
         <div class="side-item">
-            <q-img
-                v-if="userFaction"
-                class="faction-img cursor-pointer"
-                :src="imgSrc('avif')"
-                no-spinner>
-                <q-tooltip
-                    :delay="500"
-                    anchor="bottom right"
-                    self="center start"
-                    class="bg-primary column text-center text-dark"
-                    style="width: 11.25rem">
-                    <span
-                        class="text-caption text-negative text-weight-bolder uppercase letter-spacing-1">
-                        {{ userFaction }}
-                    </span>
-                    <span>Your chosen faction</span>
-                </q-tooltip>
-            </q-img>
+            <Transition name="fade" mode="out-in">
+                <img
+                    :key="userFaction"
+                    :src="getFactionIcon()"
+                    class="faction-img cursor-pointer" />
+            </Transition>
+            <q-tooltip
+                :delay="500"
+                anchor="bottom right"
+                self="center start"
+                class="bg-primary column text-center text-dark"
+                style="width: 7rem">
+                <span
+                    class="text-caption text-negative text-weight-bolder uppercase letter-spacing-1">
+                    {{ userFaction }}
+                </span>
+                <span>Faction</span>
+            </q-tooltip>
         </div>
         <div class="title-wrapper">
             <h2 class="vault-title q-ma-none text-weight-bold">
-                {{ userName || 'Adventurer' }}'s Inventory
+                {{ userName || 'Outsider' }}'s Inventory
             </h2>
         </div>
         <div class="side-item justify-end">
             <q-btn
+                v-if="storeAuth.session"
                 style="border-radius: 0.375rem; padding: 0.5em"
                 icon="logout"
                 color="primary"
@@ -131,9 +143,12 @@ watch(() => storeAuth.session, syncUserData, { immediate: true, deep: true });
 }
 
 .faction-img {
-    width: 1.75rem;
-    height: 2rem;
+    display: block;
+    width: 2.5rem;
+    height: 2.5rem;
     filter: drop-shadow(0 0 0.5rem rgba($primary, 0.3));
+    object-fit: conver;
+    margin-left: 0.6rem;
 }
 
 .title-wrapper {
@@ -150,6 +165,16 @@ watch(() => storeAuth.session, syncUserData, { immediate: true, deep: true });
     text-overflow: ellipsis;
 }
 
+.fade-enter-active,
+.fade-leave-active {
+    transition: opacity 0.25s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+    opacity: 0;
+}
+
 @media (width <= 37.5rem) {
     .vault-title {
         font-size: 0.9rem;
@@ -161,7 +186,7 @@ watch(() => storeAuth.session, syncUserData, { immediate: true, deep: true });
 
     .faction-img {
         width: 1.5rem;
-        height: 1.75rem;
+        height: 1.875rem;
     }
 }
 </style>

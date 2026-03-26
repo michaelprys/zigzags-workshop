@@ -1,15 +1,20 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 
+interface Suggestion {
+    label: string;
+    value: string;
+}
+
 const props = defineProps<{
-    modelValue: string;
-    suggestions: { label: string; value: string }[];
-    filterFn: (val: string, doneFn: (callbackFn: () => void) => void, abortFn: () => void) => void;
+    filterFn: (val: string, update: (callback: () => void) => void, abort: () => void) => void;
     goToLink: (val: string) => void;
+    modelValue: string | null;
+    suggestions: Suggestion[];
 }>();
 
 const emit = defineEmits<{
-    (e: 'update:modelValue', value: string): void;
+    (e: 'update:modelValue', value: string | null): void;
 }>();
 
 const localModel = ref(props.modelValue);
@@ -22,9 +27,20 @@ watch(
     },
 );
 
-watch(localModel, (val) => {
-    emit('update:modelValue', val);
-});
+const onUpdateModel = (val: string | Suggestion | null): void => {
+    const value = typeof val === 'object' && val !== null ? val.value : val;
+
+    emit('update:modelValue', value);
+
+    if (value) {
+        props.goToLink(value);
+    }
+};
+
+const onFilter = (val: string, update: (callback: () => void) => void, abort: () => void): void => {
+    searchVal.value = val;
+    props.filterFn(val, update, abort);
+};
 </script>
 
 <template>
@@ -51,11 +67,14 @@ watch(localModel, (val) => {
                             use-input
                             hide-selected
                             fill-input
+                            emit-value
+                            map-options
                             input-debounce="500"
+                            option-value="value"
+                            option-label="label"
                             style="width: 100%"
-                            @filter="props.filterFn"
-                            @update:model-value="props.goToLink"
-                            @filter-input="(val: string) => (searchVal = val)">
+                            @filter="onFilter"
+                            @update:model-value="onUpdateModel">
                             <template #option="scope">
                                 <q-item clickable v-bind="scope.itemProps">
                                     <q-item-section class="text-primary text-left">
@@ -97,8 +116,8 @@ watch(localModel, (val) => {
 @use 'sass:map';
 
 #intro {
-    padding-top: 5.8em;
     padding-bottom: 8.5em;
+    padding-top: 5.8em;
 }
 
 .wrapper {

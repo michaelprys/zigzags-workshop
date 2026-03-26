@@ -1,7 +1,7 @@
 <script setup lang="ts">
-import { callToastUtils } from 'src/utils/callToast.utils';
-import { delayUtils } from 'src/utils/delay.utils';
+import { callToast } from 'src/utils/callToast.utils';
 import supabaseApi from 'src/api/supabase.api';
+import { delay } from 'src/utils/delay.utils';
 import { ref, useTemplateRef } from 'vue';
 import { QForm } from 'quasar';
 
@@ -18,17 +18,17 @@ const orderKey = async () => {
                 supabaseApi.auth.resetPasswordForEmail(mailbox.value, {
                     redirectTo: 'http://localhost:9000/set-new-vault-key',
                 }),
-                delayUtils(500),
+                await delay(500),
             ]);
 
             if (error) {
-                callToastUtils(
+                callToast(
                     error ? 'Invalid mailbox format' : 'Something went wrong',
                     false,
                     'bottom',
                 );
             } else {
-                callToastUtils(
+                callToast(
                     "If this mailbox exists in our list, the key's on its way!",
                     true,
                     'bottom',

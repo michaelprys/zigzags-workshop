@@ -29,27 +29,32 @@ export const useTopUpPayment = (
             const valid = await topUpForm.validate();
             if (!valid) return;
 
-            const selectedType = paymentType.value?.value;
-            if (!selectedType) return;
+            const currentOption = paymentType.value;
+            const selectedType = currentOption?.value;
+            const price = currentOption?.price;
+
+            console.log('[Payment] Attempting with:', { selectedType, price });
+
+            const numericPrice = Number(price);
+
+            if (!selectedType || isNaN(numericPrice)) {
+                console.error('[Payment] Final check failed: Price is NaN or Type missing');
+
+                return;
+            }
 
             const minAmount = minAmounts[selectedType] ?? 0;
             if (topUpAmount.value < minAmount) return;
 
-            const price = paymentType.value?.price;
-            if (!price) return;
-
             const sessionRes = await supabaseApi.auth.getSession();
-
-            if (sessionRes.error || !sessionRes.data.session) {
-                return;
-            }
+            if (sessionRes.error || !sessionRes.data.session) return;
 
             const response = await supabaseApi.functions.invoke<CheckoutResponse>(
                 'create-checkout-session',
                 {
                     body: {
                         sessionData: {
-                            price: price,
+                            price: numericPrice,
                             quantity: topUpAmount.value,
                             paymentType: selectedType,
                         },
@@ -57,21 +62,13 @@ export const useTopUpPayment = (
                 },
             );
 
-            if (response.error !== null) {
-                throw response.error as Error;
-            }
+            if (response.error) throw response.error;
 
-            const responseData = response.data;
-
-            if (responseData?.url) {
-                window.location.href = responseData.url;
-            } else if (responseData?.sessionID) {
-                console.warn(
-                    'Backend returned sessionID instead of URL. Update Edge Function to return session.url',
-                );
+            if (response.data?.url) {
+                window.location.href = response.data.url;
             }
         } catch (err) {
-            console.error('Payment error:', err);
+            console.error('[Payment] Error:', err);
         } finally {
             pending.value = false;
         }

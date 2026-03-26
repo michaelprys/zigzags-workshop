@@ -6,10 +6,10 @@ import { useTransition } from 'src/composables/useTransition';
 import IconDebuff from 'src/components/icons/IconDebuff.vue';
 import { useFilters } from 'src/composables/useFilters';
 import { ref, watch, onMounted, computed } from 'vue';
-import { delayUtils } from 'src/utils/delay.utils';
 import { useStoreGoods } from 'stores/goods.store';
 import { useRoute, useRouter } from 'vue-router';
 import type { Category } from 'src/types/types';
+import { delay } from 'src/utils/delay.utils';
 
 const { applyTransition } = useTransition();
 const storeGoods = useStoreGoods();
@@ -78,7 +78,7 @@ watch(
                     if (img.complete) {
                         imgLoaded.value[good.id] = true;
                     } else {
-                        await delayUtils(200);
+                        await delay(200);
                         imgLoaded.value[good.id] = true;
                     }
                 })();

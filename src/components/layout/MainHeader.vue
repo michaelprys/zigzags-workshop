@@ -89,6 +89,7 @@ const emit = defineEmits(['toggle-drawer']);
 
 .hamburger {
     display: none;
+    border-radius: 0.25rem;
 }
 
 .icon-loot {

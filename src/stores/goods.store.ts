@@ -6,26 +6,31 @@ import { defineStore } from 'pinia';
 import { computed, ref } from 'vue';
 
 export interface Good {
-    id: number;
-    name: string;
-    slug: string;
-    image_url: string | null;
-    requires_access: boolean;
     category: string | null;
-    description: string | null;
-    short_description: string | null;
-    price: number;
     debuff: string | null;
-    source: string | null;
+    description: string | null;
+    id: number;
+    image_url: string | null;
+    name: string;
+    price: number;
     quantity?: number;
+    requires_access: boolean;
+    short_description: string | null;
+    slug: string;
+    source: string | null;
+}
+
+export interface Suggestion {
+    label: string;
+    value: string;
 }
 
 export interface UserGood {
-    user_id: string;
     good_id: number;
     quantity: number;
-    status: 'purchased' | 'active' | 'consumed';
     slot: number;
+    status: 'purchased' | 'active' | 'consumed';
+    user_id: string;
 }
 
 export const useStoreGoods = defineStore(
@@ -46,6 +51,7 @@ export const useStoreGoods = defineStore(
             requiresAccess: boolean,
         ): Promise<Good[]> => {
             pending.value = true;
+
             try {
                 let query = supabase
                     .from('goods')
@@ -65,12 +71,15 @@ export const useStoreGoods = defineStore(
 
                 const { data, count, error } = await query.range(start, end).order('id');
 
-                if (error) throw error;
+                if (error) {
+                    throw error;
+                }
+
                 totalGoods.value = count || 0;
 
                 return (data as Good[]) || [];
             } catch (err) {
-                console.error('Failed to load goods:', err);
+                console.error(err);
 
                 return [];
             } finally {
@@ -85,24 +94,42 @@ export const useStoreGoods = defineStore(
                     .select('id, name, image_url')
                     .limit(12);
 
-                if (error) throw error;
+                if (error) {
+                    throw error;
+                }
 
                 return (data as Partial<Good>[]) || [];
             } catch (err) {
-                console.error('Failed to load featured goods:', err);
+                console.error(err);
 
                 return [];
             }
         };
 
-        const loadSuggestedGoods = async (): Promise<Good[]> => {
-            try {
-                const { data, error } = await supabase.from('goods').select('*');
-                if (error) throw error;
+        const loadSuggestedGoods = async (val: string): Promise<Suggestion[]> => {
+            const search = val?.trim();
 
-                return (data as Good[]) || [];
+            if (!search || search.length < 2) {
+                return [];
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from('goods')
+                    .select('name, slug')
+                    .ilike('name', `%${search}%`)
+                    .limit(10);
+
+                if (error) {
+                    throw error;
+                }
+
+                return (data || []).map((item) => ({
+                    label: item.name as string,
+                    value: item.slug as string,
+                }));
             } catch (err) {
-                console.error('Failed to load suggested goods:', err);
+                console.error(err);
 
                 return [];
             }
@@ -110,13 +137,16 @@ export const useStoreGoods = defineStore(
 
         const purchaseInvitation = async (): Promise<boolean> => {
             pending.value = true;
+
             try {
                 const storeBalance = useStoreBalance();
                 const storeInventory = useStoreInventory();
                 const authRes = await supabase.auth.getUser();
                 const user = authRes.data.user;
 
-                if (!user) return false;
+                if (!user) {
+                    return false;
+                }
 
                 const userId = user.id;
                 const { data: invGood, error: fetchErr } = await supabase
@@ -125,9 +155,12 @@ export const useStoreGoods = defineStore(
                     .eq('slug', 'invitation')
                     .maybeSingle<Good>();
 
-                if (fetchErr || !invGood) return false;
+                if (fetchErr || !invGood) {
+                    return false;
+                }
 
                 const price = 20000;
+
                 await storeBalance.updateBalance('gold', price);
 
                 const countRes = await supabase
@@ -136,15 +169,18 @@ export const useStoreGoods = defineStore(
                     .eq('user_id', userId);
 
                 const payload: UserGood = {
-                    user_id: userId,
                     good_id: invGood.id,
                     quantity: 1,
-                    status: 'purchased',
                     slot: (countRes.count || 0) + 1,
+                    status: 'purchased',
+                    user_id: userId,
                 };
 
                 const { error: insErr } = await supabase.from('user_goods').insert(payload);
-                if (insErr) throw insErr;
+
+                if (insErr) {
+                    throw insErr;
+                }
 
                 await storeInventory.checkInvitation();
                 await storeInventory.loadInventoryGoods(1, 55);
@@ -152,7 +188,7 @@ export const useStoreGoods = defineStore(
 
                 return true;
             } catch (err) {
-                console.error('Purchase error:', err);
+                console.error(err);
 
                 return false;
             } finally {
@@ -161,21 +197,21 @@ export const useStoreGoods = defineStore(
         };
 
         return {
+            loadFeaturedGoods,
+            loadGoods,
+            loadSuggestedGoods,
             pending,
-            stashGoods,
-            totalGoods,
+            purchaseInvitation,
+            selectedBlackMarketCategories,
             selectedGood,
             selectedWorkshopCategories,
-            selectedBlackMarketCategories,
-            totalPages,
-            loadGoods,
-            loadFeaturedGoods,
-            loadSuggestedGoods,
-            purchaseInvitation,
             selectGood: (good: Good | null) => {
                 selectedGood.value = good;
             },
+            stashGoods,
+            totalGoods,
+            totalPages,
         };
     },
-    { persist: { storage: sessionStorage, pick: ['selectedGood', 'stashGoods'] } },
+    { persist: { pick: ['selectedGood', 'stashGoods'], storage: sessionStorage } },
 );

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { callToastUtils } from 'src/utils/callToast.utils';
+import { callToast } from 'src/utils/callToast.utils';
 import supabaseApi from 'src/api/supabase.api';
 import { useRouter } from 'vue-router';
 import type { QForm } from 'quasar';
@@ -22,9 +22,9 @@ const setNewKey = async () => {
             });
 
             if (error) {
-                callToastUtils("Couldn't set a new vault key", false, 'bottom');
+                callToast("Couldn't set a new vault key", false, 'bottom');
             } else {
-                callToastUtils('The new vault key has been set', true, 'bottom');
+                callToast('The new vault key has been set', true, 'bottom');
                 await router.push({ name: 'access-vault' });
             }
         }
