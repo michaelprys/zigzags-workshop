@@ -3,17 +3,19 @@ import IconArrow from 'src/components/icons/IconArrow.vue';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 
 const isCrossed = ref(false);
+
 const handleScroll = () => {
     isCrossed.value = window.scrollY >= 360;
 };
+
 const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    handleScroll();
 };
 
 onMounted(() => {
     window.addEventListener('scroll', handleScroll);
 });
+
 onBeforeUnmount(() => {
     window.removeEventListener('scroll', handleScroll);
 });
@@ -42,17 +44,18 @@ onBeforeUnmount(() => {
     backdrop-filter: blur(0.625rem);
     background: linear-gradient(135deg, rgb(40 40 40 / 60%) 0%, rgb(20 20 20 / 80%) 100%);
     color: $primary;
-    transition:
-        transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
-        background-color 0.2s ease,
-        border-color 0.2s ease,
-        box-shadow 0.2s ease;
     bottom: 3.5rem;
     right: 3rem;
     padding: 0;
     border: 0.0625rem solid rgb(255 255 255 / 8%);
     border-radius: 0.5rem;
     overflow: hidden;
+    transition:
+        transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+        opacity 0.4s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
 
     & svg {
         position: relative;
@@ -90,6 +93,7 @@ onBeforeUnmount(() => {
 
     &.is-crossed {
         transform: translateY(0) scale(1);
+        opacity: 1;
         pointer-events: all;
     }
 
