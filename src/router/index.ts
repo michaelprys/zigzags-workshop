@@ -7,21 +7,11 @@ const router = createRouter({
     history: createWebHistory(process.env.VUE_ROUTER_BASE),
     routes,
     scrollBehavior(to, from, savedPosition) {
-        return new Promise((resolve) => {
-            if (to.path === from.path) {
-                return resolve(false);
-            }
+        if (savedPosition) {
+            return savedPosition;
+        }
 
-            const delay = 350;
-
-            setTimeout(() => {
-                if (savedPosition) {
-                    resolve(savedPosition);
-                } else {
-                    resolve({ left: 0, top: 0 });
-                }
-            }, delay);
-        });
+        return { left: 0, top: 0 };
     },
 });
 

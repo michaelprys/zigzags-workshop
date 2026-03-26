@@ -79,7 +79,14 @@ watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
                                     <q-img
                                         class="img shadow-24"
                                         :src="good.image_url ?? ''"
-                                        ratio="1" />
+                                        ratio="1">
+                                        <template #loading>
+                                            <div
+                                                class="absolute-full flex flex-center custom-loader">
+                                                <q-spinner-dots color="secondary" size="1.5rem" />
+                                            </div>
+                                        </template>
+                                    </q-img>
                                 </div>
 
                                 <div class="content-box">
@@ -248,7 +255,16 @@ watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
     height: 9rem;
     border-radius: 0.75rem;
     border: 0.0625rem solid rgb(255 255 255 / 12%);
-    background: #000;
+    background-color: transparent !important;
+}
+
+:deep(.q-img__loading),
+:deep(.q-img__container) {
+    background-color: transparent !important;
+}
+
+.custom-loader {
+    background: rgb(255 255 255 / 3%);
 }
 
 .content-box {

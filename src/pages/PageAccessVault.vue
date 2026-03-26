@@ -10,11 +10,12 @@ const router = useRouter();
 const mailbox = ref('');
 const vaultKey = ref('');
 const isPwd = ref(true);
-const pending = ref(false);
+const pendingUser = ref(false);
+const pendingAnonymousUser = ref(false);
 const accessVaultForm = useTemplateRef<QForm | null>('access-vault-form');
 
 const accessVault = async () => {
-    pending.value = true;
+    pendingUser.value = true;
     try {
         const valid = await accessVaultForm.value?.validate();
 
@@ -27,7 +28,6 @@ const accessVault = async () => {
             if (error) {
                 callToast('Wrong vault key or mailbox. Try again', false);
             } else {
-                await delay(1000);
                 await router.push({ name: 'vault' });
                 callToast('Welcome to vault', true);
             }
@@ -35,14 +35,16 @@ const accessVault = async () => {
     } catch (err) {
         console.error(err);
     } finally {
-        pending.value = false;
+        await delay(1000);
+        pendingUser.value = false;
     }
 };
 
 const accessAsGuest = async () => {
-    pending.value = true;
+    pendingAnonymousUser.value = true;
     try {
         const { error } = await supabaseApi.auth.signInAnonymously();
+
         if (error) {
             callToast('Guest access failed', false);
         } else {
@@ -52,7 +54,8 @@ const accessAsGuest = async () => {
     } catch (err) {
         console.error(err);
     } finally {
-        pending.value = false;
+        await delay(1000);
+        pendingAnonymousUser.value = false;
     }
 };
 </script>
@@ -73,7 +76,7 @@ const accessAsGuest = async () => {
             </div>
 
             <q-btn
-                :loading="pending"
+                :loading="pendingAnonymousUser"
                 class="legendary-loot-btn q-py-md text-weight-bolder"
                 flat
                 @click="accessAsGuest">
@@ -118,7 +121,7 @@ const accessAsGuest = async () => {
             </div>
             <div class="row items-center justify-between q-mt-md">
                 <q-btn
-                    :loading="pending"
+                    :loading="pendingUser"
                     type="submit"
                     label="Open"
                     color="secondary"

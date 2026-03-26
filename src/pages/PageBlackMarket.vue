@@ -4,6 +4,7 @@ import ItemCategories from 'src/components/items/ItemCategories.vue';
 import { useManageStash } from 'src/composables/useManageStash';
 import { useTransition } from 'src/composables/useTransition';
 import IconDebuff from 'src/components/icons/IconDebuff.vue';
+import { useStoreInventory } from 'stores/inventory.store';
 import { useFilters } from 'src/composables/useFilters';
 import { ref, watch, onMounted, computed } from 'vue';
 import { useStoreGoods } from 'stores/goods.store';
@@ -13,6 +14,7 @@ import { delay } from 'src/utils/delay.utils';
 
 const { applyTransition } = useTransition();
 const storeGoods = useStoreGoods();
+const storeInventory = useStoreInventory();
 const route = useRoute();
 const router = useRouter();
 const { addToStash } = useManageStash();
@@ -98,6 +100,12 @@ watch(
 );
 
 onMounted(async () => {
+    await storeInventory.checkInvitation();
+    if (!storeInventory.invitation) {
+        void router.push({ name: 'black-market-access' });
+
+        return;
+    }
     await loadPaginatedGoods();
     hasInitialLoaded.value = true;
 });

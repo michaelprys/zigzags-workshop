@@ -18,7 +18,7 @@ const orderKey = async () => {
                 supabaseApi.auth.resetPasswordForEmail(mailbox.value, {
                     redirectTo: 'http://localhost:9000/set-new-vault-key',
                 }),
-                await delay(500),
+                await delay(1000),
             ]);
 
             if (error) {

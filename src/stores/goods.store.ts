@@ -50,6 +50,14 @@ export const useStoreGoods = defineStore(
             goodsPerPage: number,
             requiresAccess: boolean,
         ): Promise<Good[]> => {
+            const storeInventory = useStoreInventory();
+
+            if (requiresAccess && !storeInventory.invitation) {
+                totalGoods.value = 0;
+
+                return [];
+            }
+
             pending.value = true;
 
             try {
@@ -71,9 +79,7 @@ export const useStoreGoods = defineStore(
 
                 const { data, count, error } = await query.range(start, end).order('id');
 
-                if (error) {
-                    throw error;
-                }
+                if (error) throw error;
 
                 totalGoods.value = count || 0;
 
@@ -87,16 +93,46 @@ export const useStoreGoods = defineStore(
             }
         };
 
-        const loadFeaturedGoods = async (): Promise<Partial<Good>[]> => {
+        const loadGoodBySlug = async (slug: string): Promise<Good | null> => {
+            const storeInventory = useStoreInventory();
+            pending.value = true;
             try {
                 const { data, error } = await supabase
                     .from('goods')
-                    .select('id, name, image_url')
+                    .select('*')
+                    .eq('slug', slug)
+                    .maybeSingle<Good>();
+
+                if (error || !data) return null;
+
+                if (data.requires_access && !storeInventory.invitation) {
+                    return null;
+                }
+
+                return data;
+            } catch (err) {
+                console.error(err);
+
+                return null;
+            } finally {
+                pending.value = false;
+            }
+        };
+
+        const loadFeaturedGoods = async (): Promise<Partial<Good>[]> => {
+            const storeInventory = useStoreInventory();
+            try {
+                let query = supabase
+                    .from('goods')
+                    .select('id, name, image_url, requires_access')
                     .limit(12);
 
-                if (error) {
-                    throw error;
+                if (!storeInventory.invitation) {
+                    query = query.eq('requires_access', false);
                 }
+
+                const { data, error } = await query;
+                if (error) throw error;
 
                 return (data as Partial<Good>[]) || [];
             } catch (err) {
@@ -108,21 +144,23 @@ export const useStoreGoods = defineStore(
 
         const loadSuggestedGoods = async (val: string): Promise<Suggestion[]> => {
             const search = val?.trim();
+            if (!search || search.length < 2) return [];
 
-            if (!search || search.length < 2) {
-                return [];
-            }
+            const storeInventory = useStoreInventory();
 
             try {
-                const { data, error } = await supabase
+                let query = supabase
                     .from('goods')
-                    .select('name, slug')
+                    .select('name, slug, requires_access')
                     .ilike('name', `%${search}%`)
                     .limit(10);
 
-                if (error) {
-                    throw error;
+                if (!storeInventory.invitation) {
+                    query = query.eq('requires_access', false);
                 }
+
+                const { data, error } = await query;
+                if (error) throw error;
 
                 return (data || []).map((item) => ({
                     label: item.name as string,
@@ -137,16 +175,13 @@ export const useStoreGoods = defineStore(
 
         const purchaseInvitation = async (): Promise<boolean> => {
             pending.value = true;
-
             try {
                 const storeBalance = useStoreBalance();
                 const storeInventory = useStoreInventory();
                 const authRes = await supabase.auth.getUser();
                 const user = authRes.data.user;
 
-                if (!user) {
-                    return false;
-                }
+                if (!user) return false;
 
                 const userId = user.id;
                 const { data: invGood, error: fetchErr } = await supabase
@@ -155,12 +190,9 @@ export const useStoreGoods = defineStore(
                     .eq('slug', 'invitation')
                     .maybeSingle<Good>();
 
-                if (fetchErr || !invGood) {
-                    return false;
-                }
+                if (fetchErr || !invGood) return false;
 
                 const price = 20000;
-
                 await storeBalance.updateBalance('gold', price);
 
                 const countRes = await supabase
@@ -177,10 +209,7 @@ export const useStoreGoods = defineStore(
                 };
 
                 const { error: insErr } = await supabase.from('user_goods').insert(payload);
-
-                if (insErr) {
-                    throw insErr;
-                }
+                if (insErr) throw insErr;
 
                 await storeInventory.checkInvitation();
                 await storeInventory.loadInventoryGoods(1, 55);
@@ -199,6 +228,7 @@ export const useStoreGoods = defineStore(
         return {
             loadFeaturedGoods,
             loadGoods,
+            loadGoodBySlug,
             loadSuggestedGoods,
             pending,
             purchaseInvitation,

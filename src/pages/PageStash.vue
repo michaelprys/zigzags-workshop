@@ -12,7 +12,7 @@ const dialog = ref(false);
 <template>
     <q-page>
         <StashDialog v-model="dialog" />
-        <Transition name="fade">
+        <Transition name="fade" mode="out-in">
             <StashItems v-if="storeGoods.stashGoods.length > 0" @open-dialog="dialog = true" />
             <StashEmpty v-else />
         </Transition>

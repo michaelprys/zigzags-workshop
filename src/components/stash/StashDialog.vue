@@ -3,7 +3,6 @@ import { useManageStash } from 'src/composables/useManageStash';
 import ItemBalance from 'src/components/items/ItemBalance.vue';
 import { useStoreInventory } from 'stores/inventory.store';
 import { useStoreBalance } from 'stores/balance.store';
-import { useStoreGoods } from 'stores/goods.store';
 import { computed, reactive, ref } from 'vue';
 import { delay } from 'src/utils/delay.utils';
 import { useRouter } from 'vue-router';
@@ -14,7 +13,6 @@ const $q = useQuasar();
 const myForm = ref<QForm | null>(null);
 const pending = ref(false);
 const router = useRouter();
-const storeGoods = useStoreGoods();
 const storeInventory = useStoreInventory();
 const storeBalance = useStoreBalance();
 
@@ -69,12 +67,7 @@ const trade = async () => {
 const handleTrade = async () => {
     tradeCancelled.value = false;
     pending.value = true;
-
-    if (!myForm.value) {
-        pending.value = false;
-
-        return;
-    }
+    if (!myForm.value) return;
 
     try {
         const isValid = await myForm.value.validate();
@@ -89,14 +82,14 @@ const handleTrade = async () => {
         if (!tradeCancelled.value) {
             await trade();
             sessionStorage.setItem('purchaseCompleted', 'true');
-            storeGoods.stashGoods = [];
             storeBalance.purchaseStatus = '';
+
             $q.notify({
                 type: 'positive',
                 message: "Pleasure doin' business!",
                 position: 'bottom-right',
             });
-            emit('update:modelValue', false);
+
             await router.push({ name: 'purchase-success' });
         }
     } catch (err) {
@@ -118,7 +111,8 @@ const cancelTrade = () => {
             :model-value="props.modelValue"
             backdrop-filter="blur(0.75rem) brightness(40%)"
             transition-show="scale"
-            transition-hide="scale"
+            transition-hide="none"
+            persistent
             @hide="tradeCancelled = true"
             @update:model-value="(val) => emit('update:modelValue', val)">
             <div class="modal">
@@ -164,7 +158,6 @@ const cancelTrade = () => {
                                 Trading...
                             </template>
                         </q-btn>
-
                         <q-btn
                             v-close-popup
                             label="Cancel"

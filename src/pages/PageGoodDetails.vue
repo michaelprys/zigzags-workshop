@@ -1,40 +1,75 @@
 <script setup lang="ts">
 import { useManageStash } from 'src/composables/useManageStash';
 import { useMoveImage } from 'src/composables/useMoveImage';
+import { useStoreInventory } from 'stores/inventory.store';
 import { useStoreGoods } from 'stores/goods.store';
-import { useRouter } from 'vue-router';
-import { onMounted, ref } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { onMounted, ref, computed } from 'vue';
 
+const route = useRoute();
 const router = useRouter();
 const storeGoods = useStoreGoods();
+const storeInventory = useStoreInventory();
 const { addToStash } = useManageStash();
-const isAuth = storeGoods.selectedGood?.requires_access ?? false;
+
 const imgRef = ref<HTMLImageElement | null>(null);
-let moveImage: (e: MouseEvent) => void;
-let resetImage: () => void = () => {};
+const isLoaded = ref(false);
+const imgLoading = ref(true);
 
-onMounted(() => {
-    const { moveImage: move, resetImage: reset } = useMoveImage(imgRef.value);
+const currentGood = computed(() => storeGoods.selectedGood);
+const isAuth = computed(() => currentGood.value?.requires_access ?? false);
 
-    moveImage = move;
-    resetImage = reset;
+const moveImage = (e: MouseEvent) => {
+    if (imgRef.value) {
+        const { moveImage: move } = useMoveImage(imgRef.value);
+        move(e);
+    }
+};
+
+const resetImage = () => {
+    if (imgRef.value) {
+        const { resetImage: reset } = useMoveImage(imgRef.value);
+        reset();
+    }
+};
+
+onMounted(async () => {
+    await storeInventory.checkInvitation();
+    const slug = route.params.slug as string;
+    const data = await storeGoods.loadGoodBySlug(slug);
+
+    if (!data) {
+        await router.push({ name: 'black-market-access' });
+
+        return;
+    }
+
+    storeGoods.selectGood(data);
+    isLoaded.value = true;
 });
 </script>
 
 <template>
     <q-page>
-        <section id="good-details">
+        <section id="good-details" v-if="isLoaded">
             <div class="main-wrapper">
                 <div class="bg-frame" :class="isAuth ? 'bg-black-market' : 'bg-workshop'"></div>
                 <div class="details-layout">
                     <div class="visual-column">
                         <div class="product-frame shadow-24">
+                            <div
+                                v-if="imgLoading"
+                                class="absolute-full flex flex-center custom-loader">
+                                <q-spinner-dots color="secondary" size="3rem" />
+                            </div>
                             <img
                                 ref="imgRef"
                                 class="product-img"
-                                :src="storeGoods.selectedGood?.image_url || ''"
+                                :class="{ 'img-hidden': imgLoading }"
+                                :src="currentGood?.image_url || ''"
                                 @mousemove="moveImage"
-                                @mouseleave="resetImage" />
+                                @mouseleave="resetImage"
+                                @load="imgLoading = false" />
                         </div>
                     </div>
                     <div class="info-column">
@@ -43,10 +78,10 @@ onMounted(() => {
                                 <div class="column">
                                     <span
                                         class="text-overline text-secondary text-weight-bolder letter-spacing-3">
-                                        {{ storeGoods.selectedGood?.category }}
+                                        {{ currentGood?.category }}
                                     </span>
                                     <h1 class="text-h4 text-weight-bolder text-white q-ma-none">
-                                        {{ storeGoods.selectedGood?.name }}
+                                        {{ currentGood?.name }}
                                     </h1>
                                 </div>
                                 <q-btn
@@ -58,7 +93,7 @@ onMounted(() => {
                                     @click="router.back()" />
                             </div>
                             <p class="text-body1 text-grey-4 line-height-relaxed">
-                                {{ storeGoods.selectedGood?.description }}
+                                {{ currentGood?.description }}
                             </p>
                             <div class="lore-section q-mt-lg">
                                 <div
@@ -66,7 +101,7 @@ onMounted(() => {
                                     Artifact Data
                                 </div>
                                 <p class="text-caption text-grey-6 q-mt-xs q-ma-none italic">
-                                    {{ storeGoods.selectedGood?.source }}
+                                    {{ currentGood?.source }}
                                 </p>
                             </div>
                             <div class="action-footer row items-center justify-between q-mt-xl">
@@ -75,7 +110,7 @@ onMounted(() => {
                                         Exchange Rate
                                     </span>
                                     <div class="text-h4 text-secondary text-weight-bolder">
-                                        {{ storeGoods.selectedGood?.price }}
+                                        {{ currentGood?.price }}
                                         <span class="text-h6 text-weight-light">Gold</span>
                                     </div>
                                 </div>
@@ -85,17 +120,19 @@ onMounted(() => {
                                     color="secondary"
                                     text-color="dark"
                                     label="Add to stash"
-                                    @click="
-                                        storeGoods.selectedGood
-                                            ? addToStash(storeGoods.selectedGood)
-                                            : null
-                                    " />
+                                    @click="currentGood ? addToStash(currentGood) : null" />
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
         </section>
+        <div v-else class="loading-container column flex-center">
+            <q-spinner-hourglass color="secondary" size="4rem" />
+            <div class="text-h6 text-secondary q-mt-md uppercase letter-spacing-2">
+                Loading your item...
+            </div>
+        </div>
     </q-page>
 </template>
 
@@ -133,9 +170,9 @@ onMounted(() => {
     left: 50%;
     mask-image: radial-gradient(
         ellipse at center,
-        rgb(0 0 0 / 100%) 0%,
-        rgb(0 0 0 / 50%) 40%,
-        rgb(0 0 0 / 0%) 85%
+        #fff 0%,
+        rgb(255 255 255 / 50%) 40%,
+        transparent 85%
     );
 }
 
@@ -160,19 +197,30 @@ onMounted(() => {
 }
 
 .product-frame {
+    position: relative;
     aspect-ratio: 1 / 1;
     width: 100%;
-    background: #000;
+    background: transparent !important;
     border-radius: 0.75rem;
     overflow: hidden;
     border: 0.0625rem solid rgb(255 255 255 / 10%);
 }
 
+.custom-loader {
+    z-index: 1;
+    background: rgb(255 255 255 / 2%);
+}
+
 .product-img {
     width: 100%;
     height: 100%;
+    background: transparent !important;
     object-fit: cover;
-    transition: all 0.1s ease;
+    transition: transform 0.1s ease;
+
+    &.img-hidden {
+        opacity: 0;
+    }
 }
 
 .content-panel {
@@ -187,17 +235,9 @@ onMounted(() => {
 .close-button {
     min-width: 2.75rem !important;
     min-height: 2.75rem !important;
-    width: 2.75rem !important;
-    height: 2.75rem !important;
     background: rgb(255 255 255 / 5%);
-    flex-shrink: 0;
     border-radius: 50% !important;
     border: 0.0625rem solid rgb(255 255 255 / 12%);
-    padding: 0;
-}
-
-.line-height-relaxed {
-    line-height: 1.7;
 }
 
 .lore-section {
@@ -211,14 +251,8 @@ onMounted(() => {
     height: 3.5rem;
     font-size: 1rem;
     font-weight: 900;
-    letter-spacing: 0.0625rem;
-    box-shadow: 0 0.625rem 1.5625rem rgb(0 0 0 / 30%);
     padding-inline: 3rem;
     border-radius: 0.5rem;
-}
-
-.letter-spacing-3 {
-    letter-spacing: 0.1875rem;
 }
 
 @media (width <= 64rem) {
@@ -233,10 +267,6 @@ onMounted(() => {
 }
 
 @media (width <= 37.5rem) {
-    .text-h4 {
-        font-size: 1.85rem;
-    }
-
     .action-footer {
         flex-direction: column;
         gap: 2rem;
