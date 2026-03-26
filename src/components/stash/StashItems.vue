@@ -1,20 +1,15 @@
 <script setup lang="ts">
-import gsap from 'gsap';
-import { useStoreAuth } from 'src/stores/storeAuth';
-import { useStoreGoods } from 'src/stores/storeGoods';
-import { useManageStash } from 'src/use/useManageStash';
-import { useTransition } from 'src/use/useTransition';
+import { useManageStash } from 'src/composables/useManageStash';
 import { onMounted, reactive, ref, watch } from 'vue';
+import { useStoreGoods } from 'stores/goods.store';
+import { useStoreAuth } from 'stores/auth.store';
+import gsap from 'gsap';
 
 const { basePrice, goblinTax, removeFromStash, increaseGoodQuantity, decreaseGoodQuantity } =
     useManageStash();
 const storeAuth = useStoreAuth();
 const storeGoods = useStoreGoods();
-
-const { transitionName, applyTransition } = useTransition();
-
 const vaultAccessed = ref(false);
-
 const emit = defineEmits(['openDialog']);
 
 onMounted(async () => {
@@ -23,11 +18,10 @@ onMounted(async () => {
     }
     vaultAccessed.value = !!storeAuth.session;
 });
-
 const tweened = reactive({
     tweenedBasePrice: basePrice.value,
     tweenedGoblinTax: goblinTax.value,
-    tweenedFinalPrice: basePrice.value + goblinTax.value
+    tweenedFinalPrice: basePrice.value + goblinTax.value,
 });
 
 watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
@@ -35,102 +29,112 @@ watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
         duration: 0.5,
         tweenedBasePrice: newBasePrice,
         tweenedGoblinTax: newGoblinTax,
-        tweenedFinalPrice: newBasePrice + newGoblinTax
+        tweenedFinalPrice: newBasePrice + newGoblinTax,
     });
 });
 </script>
 
 <template>
     <section id="stash" class="column flex-center relative-position">
-        <div class="q-pa-md">
-            <h1 class="title text-center text-h3">Your stash</h1>
-
-            <div class="wrapper q-mt-xl">
-                <div dark class="panel">
-                    <TransitionGroup :name="transitionName" tag="ul">
+        <div class="q-pa-md container-limited">
+            <h1
+                class="title text-center text-h3 q-mb-xl text-weight-bolder text-uppercase letter-spacing-3">
+                Your Stash
+            </h1>
+            <div class="wrapper">
+                <div class="panel main-panel">
+                    <ul class="stash-list">
                         <li
                             v-for="(good, goodIdx) in storeGoods.stashGoods"
                             :key="good.id"
-                            class="card"
-                        >
-                            <q-img class="img shadow-1" :src="good.image_url" />
-
-                            <div class="inner q-pa-md">
-                                <div class="info column">
-                                    <span class="text-body1 text-bold">{{ good.name }}</span>
-                                    <span class="text-bold text-info"
-                                        >Category: {{ good.category }}</span
-                                    >
-                                    <span class="good-price q-mt-lg text-bold"
-                                        ><span class="text-secondary">Price</span>:
-                                        {{ good.price }} Gold</span
-                                    >
+                            class="card">
+                            <q-img class="img shadow-24" :src="good.image_url" ratio="1" />
+                            <div class="inner q-ml-lg">
+                                <div class="info column justify-center">
+                                    <span class="text-h6 text-primary q-mb-xs text-weight-bold">
+                                        {{ good.name }}
+                                    </span>
+                                    <span
+                                        class="text-caption text-grey-6 uppercase letter-spacing-1">
+                                        {{ good.category }}
+                                    </span>
+                                    <div class="q-mt-md">
+                                        <span class="text-secondary text-weight-bolder text-h6">
+                                            {{ good.price }}
+                                        </span>
+                                        <span class="text-grey-7 q-ml-sm text-caption uppercase">
+                                            Gold / unit
+                                        </span>
+                                    </div>
                                 </div>
-
                                 <div class="actions">
                                     <q-btn
-                                        outline
-                                        color="primary"
+                                        flat
+                                        color="grey-8"
                                         size="sm"
-                                        dense
+                                        round
                                         icon="close"
-                                        @click="
-                                            removeFromStash(goodIdx);
-                                            applyTransition('list', 400);
-                                        "
-                                    />
-
-                                    <div class="flex items-center q-gutter-x-md">
+                                        class="hover-red"
+                                        @click="removeFromStash(goodIdx)" />
+                                    <div class="quantity-control flex items-center no-wrap">
                                         <q-btn
                                             dense
                                             icon="remove"
                                             flat
+                                            round
+                                            color="secondary"
+                                            size="sm"
                                             :disable="(good.quantity ?? 0) <= 1"
-                                            @click="decreaseGoodQuantity(good)"
-                                        />
-                                        <span>{{ good.quantity }}</span>
+                                            @click="decreaseGoodQuantity(good)" />
+                                        <span class="q-mx-md text-weight-bold text-h6 value-text">
+                                            {{ good.quantity }}
+                                        </span>
                                         <q-btn
                                             dense
                                             icon="add"
                                             flat
+                                            round
+                                            color="secondary"
+                                            size="sm"
                                             :disable="(good.quantity ?? 0) >= 5"
-                                            @click="increaseGoodQuantity(good)"
-                                        />
+                                            @click="increaseGoodQuantity(good)" />
                                     </div>
                                 </div>
                             </div>
                         </li>
-                    </TransitionGroup>
+                    </ul>
                 </div>
-
-                <div class="column panel-price">
-                    <div class="panel-price-inner q-pa-lg">
-                        <div class="flex text-subtitle1" style="gap: 0.3125rem">
-                            <span class="text-secondary">💰 Base price:</span>
-
-                            <span>{{ tweened.tweenedBasePrice.toFixed(0) }} Gold</span>
+                <div class="column panel panel-price">
+                    <div class="panel-price-inner q-pa-xl">
+                        <div class="price-row">
+                            <span class="label">Subtotal</span>
+                            <span class="value">{{ tweened.tweenedBasePrice.toFixed(0) }} G</span>
                         </div>
-
-                        <div class="flex q-mt-xs text-subtitle1" style="gap: 0.3125rem">
-                            <span class="text-secondary">💎 Goblin Tax:</span>
-                            <span>{{ tweened.tweenedGoblinTax.toFixed(0) }} Gold</span>
+                        <div class="price-row q-mt-md">
+                            <span class="label">Goblin Tax</span>
+                            <span class="value text-orange-9 text-weight-bolder">
+                                +{{ tweened.tweenedGoblinTax.toFixed(0) }} G
+                            </span>
                         </div>
-
-                        <div class="q-my-md separator-single"></div>
-
-                        <div class="flex text-subtitle1" style="gap: 0.3125rem">
-                            <span class="text-secondary">Final Price: </span>
-                            <span>{{ tweened.tweenedFinalPrice.toFixed(0) }} Gold</span>
+                        <div class="q-my-xl separator-custom"></div>
+                        <div class="price-row total">
+                            <span
+                                class="text-secondary uppercase text-weight-bolder letter-spacing-1">
+                                Total
+                            </span>
+                            <span class="text-h4 text-secondary text-weight-bolder price-glow">
+                                {{ tweened.tweenedFinalPrice.toFixed(0) }} G
+                            </span>
                         </div>
-
                         <q-btn
-                            class="full-width q-mt-md"
-                            outline
-                            color="primary"
+                            class="full-width q-mt-xl trade-btn"
+                            :color="vaultAccessed ? 'secondary' : 'grey-10'"
+                            :text-color="vaultAccessed ? 'dark' : 'grey-7'"
+                            unelevated
+                            size="lg"
                             :disable="!vaultAccessed"
-                            :label="vaultAccessed ? 'Begin trade' : 'Access vault to pay'"
-                            @click="emit('openDialog')"
-                        />
+                            :label="vaultAccessed ? 'BEGIN TRADE' : 'VAULT LOCKED'"
+                            @click="emit('openDialog')" />
                     </div>
                 </div>
             </div>
@@ -139,84 +143,103 @@ watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
 </template>
 
 <style lang="scss" scoped>
-@use 'sass:map';
-
 #stash {
-    padding-bottom: 19em;
-    padding-top: 2em;
+    padding-bottom: 12rem;
+    padding-top: 4rem;
 }
-.q-carousel__slide div:last-child {
-    margin-right: 0;
+
+.container-limited {
+    max-width: 72.5rem;
+    width: 100%;
 }
+
 .wrapper {
     display: flex;
     justify-content: center;
+    align-items: flex-start;
     gap: 2rem;
-    width: 75rem;
 }
-.separator-single {
-    margin-inline: auto;
-    content: '';
-    width: 100%;
-    top: 0;
-    height: 1px;
-    background-color: rgba(255, 255, 255, 0.125);
-    position: relative;
-    display: block;
-    z-index: 100;
-}
-.panel,
-.panel-price {
-    height: 100%;
-    border-radius: $rounded;
-    position: relative;
-    background-color: $dark;
-    border: 1px solid rgba(255, 255, 255, 0.125);
-}
+
 .panel {
-    width: 100%;
-    min-height: 562.3px;
+    box-shadow:
+        inset 0 0 1.25rem rgb(0 0 0 / 50%),
+        0 1.25rem 3.125rem rgb(0 0 0 / 70%);
+    background:
+        radial-gradient(circle at top left, rgb(255 255 255 / 3%) 0%, transparent 40%),
+        linear-gradient(180deg, #161616 0%, #0d0d0d 100%);
+    border: 0.0625rem solid rgb(255 255 255 / 8%);
+    border-radius: 0.75rem;
     overflow: hidden;
 }
-.panel-price {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    max-width: 18rem;
-    width: 100%;
+
+.main-panel {
+    flex: 1;
 }
-.panel-price-inner {
-    width: 100%;
+
+.stash-list {
+    padding: 0;
+    margin: 0;
+    list-style: none;
 }
+
 .card {
-    position: relative;
     display: flex;
-    justify-content: space-between;
-    padding-block: 0.8rem;
-    padding-left: 1rem;
-    z-index: 1;
-    &::before {
-        content: '';
-        position: absolute;
-        inset: 0;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.125);
-        mask-image: linear-gradient(to right, transparent, white 5%, white 95%, transparent);
-        z-index: -1;
+    padding: 1.25rem 1.75rem;
+    border-bottom: 0.0625rem solid rgb(255 255 255 / 5%);
+    transition: background 0.3s ease;
+
+    &:hover {
+        background: rgb(255 255 255 / 1.5%);
     }
-    &:nth-child(n + 3):last-child::before {
-        content: none;
+
+    &:last-child {
+        border-bottom: none;
     }
 }
+
 .img {
-    width: 12.5rem;
-    background-size: cover;
-    border-radius: $rounded;
+    width: 7.5rem;
+    height: 7.5rem;
+    border-radius: 0.375rem;
+    border: 0.0625rem solid rgb(255 255 255 / 10%);
+    background: #000;
 }
+
 .inner {
     display: flex;
     justify-content: space-between;
-    width: 100%;
+    flex: 1;
 }
+
+.panel-price {
+    position: sticky;
+    width: 25rem;
+    border: 0.0625rem solid rgba($secondary, 0.2);
+    top: 2rem;
+}
+
+.price-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    .label {
+        font-size: 0.8rem;
+        letter-spacing: 0.0625rem;
+        color: #888;
+        text-transform: uppercase;
+    }
+
+    .value {
+        font-size: 1.1rem;
+        color: #eee;
+    }
+}
+
+.price-glow {
+    text-shadow: 0 0 0.9375rem rgba($secondary, 0.3);
+}
+
 .actions {
     display: flex;
     flex-direction: column;
@@ -224,72 +247,78 @@ watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
     align-items: flex-end;
 }
 
-@media (width <= 81.9375rem) {
-    .title {
-        font-size: map.get($h4, 'size');
-    }
-    .subtitle {
-        font-size: map.get($body1, 'size');
-        margin-top: 0.5rem;
-    }
+.quantity-control {
+    box-shadow: inset 0 0.125rem 0.25rem rgb(0 0 0 / 50%);
+    background: rgb(0 0 0 / 40%);
+    padding: 0.25rem 0.625rem;
+    border-radius: 0.375rem;
+    border: 0.0625rem solid rgb(255 255 255 / 6%);
+}
+
+.value-text {
+    color: $primary;
+}
+
+.separator-custom {
+    height: 0.0625rem;
+    background: linear-gradient(90deg, transparent, rgb(255 255 255 / 10%), transparent);
+}
+
+.trade-btn {
+    height: 3.625rem;
+    font-weight: 900;
+    border-radius: 0.375rem;
+    letter-spacing: 0.125rem;
+    box-shadow: 0 0.25rem 0.9375rem rgb(0 0 0 / 30%);
+}
+
+.hover-red:hover {
+    color: $negative !important;
+}
+
+.letter-spacing-1 {
+    letter-spacing: 0.0625rem;
+}
+
+.letter-spacing-2 {
+    letter-spacing: 0.125rem;
+}
+
+.letter-spacing-3 {
+    letter-spacing: 0.1875rem;
+}
+
+@media (width <= 64rem) {
     .wrapper {
-        width: 100%;
-        display: flex;
-        gap: 1.5rem;
-        justify-content: center;
-    }
-    .panel {
-        margin-right: 0;
-        width: 48.75rem;
-    }
-    .card {
-        &::before {
-            &:nth-child(n + 2):last-child::before {
-                content: none;
-            }
-        }
-    }
-    .inner {
-        padding-bottom: 0;
-    }
-    .panel-price-inner {
-        display: flex;
         flex-direction: column;
         align-items: center;
     }
-    .good-price {
-        margin-top: 0.5rem;
-    }
-}
-@media (width <= 964px) {
+
     .panel {
         width: 100%;
-        max-width: 31.9875rem;
-        min-height: 30.6719rem;
     }
-    .wrapper {
-        width: 100%;
-        display: flex;
-        flex-direction: column-reverse;
-        gap: 1.5rem;
-    }
+
     .panel-price {
-        max-width: 100%;
+        position: static;
     }
 }
-@media (width <= $breakpoint-xs) {
-    .panel {
-        min-height: 30.7969rem;
-    }
-    .inner {
-        display: flex;
+
+@media (width <= 37.5rem) {
+    .card {
         flex-direction: column;
-    }
-    .actions {
-        margin-top: 1rem;
-        flex-direction: row-reverse;
         align-items: center;
-        width: 100%;
+        text-align: center;
+    }
+
+    .inner {
+        flex-direction: column;
+        padding: 1.5rem 0 0;
+        margin-left: 0;
+    }
+
+    .actions {
+        align-items: center;
+        gap: 1.5rem;
     }
 }
 </style>

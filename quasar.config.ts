@@ -12,8 +12,8 @@ export default defineConfig(() => ({
         vueRouterMode: 'hash',
         vitePlugins: [
             VitePluginChecker({
-                typescript: true,
-                vueTsc: true,
+                typescript: false,
+                vueTsc: false,
                 overlay: {
                     initialIsOpen: false,
                     position: 'bl',
@@ -22,7 +22,7 @@ export default defineConfig(() => ({
                     color: #ffffff;
                     padding: 1rem;
                     border-radius: .5rem;
-                    border: 1px solid #444444;
+                    border: 0.0625rem solid #444444;
                     box-shadow: 0 .25rem .5rem rgba(0, 0, 0, 0.3);
                     font-family: Arial, sans-serif;
                 `,
@@ -33,11 +33,11 @@ export default defineConfig(() => ({
                     padding: .5rem 1rem;
                     opacity: 0.5;
                     filter: grayscale(1)
-                `
-                }
-            })
-        ]
+                `,
+                },
+            }),
+        ],
     },
     devServer: { open: false },
-    framework: { plugins: ['Notify', 'Dialog'] }
+    framework: { plugins: ['Notify', 'Dialog'] },
 }));

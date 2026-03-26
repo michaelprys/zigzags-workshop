@@ -1,0 +1,98 @@
+{
+    "extends": ["stylelint-config-standard-scss", "stylelint-config-recommended-vue/scss"],
+    "plugins": ["stylelint-order"],
+    "rules": {
+        "max-nesting-depth": 3,
+        "no-descending-specificity": null,
+        "keyframes-name-pattern": null,
+        "number-max-precision": 5,
+        "color-function-notation": "modern",
+        "selector-class-pattern": null,
+        "order/properties-alphabetical-order": null,
+        "order/order": [
+            "custom-properties",
+            "dollar-variables",
+            "declarations",
+            "rules",
+            "at-rules"
+        ],
+        "order/properties-order": [
+            {
+                "groupName": "Layout & Position",
+                "properties": [
+                    "display",
+                    "flex-direction",
+                    "flex-wrap",
+                    "justify-content",
+                    "place-items",
+                    "place-content",
+                    "align-items",
+                    "grid",
+                    "/^grid-/",
+                    "flex",
+                    "/^flex-/",
+                    "position",
+                    "inset",
+                    "/^top|^right|^bottom|^left/",
+                    "aspect-ratio",
+                    "transform",
+                    "transform-origin",
+                    "z-index"
+                ]
+            },
+            {
+                "groupName": "Constraints & Sizes",
+                "properties": [
+                    "max-width",
+                    "min-width",
+                    "max-height",
+                    "min-height",
+                    "width",
+                    "height"
+                ]
+            },
+            {
+                "groupName": "Spacing & Border",
+                "properties": ["gap", "/^margin/", "/^padding/", "/^border/"]
+            },
+            {
+                "groupName": "Typography",
+                "properties": [
+                    "font-family",
+                    "font-size",
+                    "font-weight",
+                    "line-height",
+                    "letter-spacing",
+                    "/^text-/",
+                    "white-space",
+                    "word-break"
+                ]
+            },
+            {
+                "groupName": "Visual",
+                "properties": [
+                    "text-shadow",
+                    "box-shadow",
+                    "filter",
+                    "backdrop-filter",
+                    "opacity",
+                    "background-image",
+                    "background",
+                    "object-fit",
+                    "background-position",
+                    "background-size",
+                    "background-repeat",
+                    "background-attachment",
+                    "background-clip",
+                    "background-origin",
+                    "color",
+                    "background-color"
+                ]
+            },
+            {
+                "groupName": "Misc",
+                "properties": ["pointer-events", "user-select", "cursor", "animation", "transition"]
+            }
+        ]
+    }
+}

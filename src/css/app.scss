@@ -1,18 +1,20 @@
 @font-face {
-    font-family: 'TrajanusBricks';
-    src: url('./fonts/trajanusbricks-webfont.woff2') format('woff2');
+    font-family: TrajanusBricks;
+    src: url('../assets/fonts/trajanusbricks-webfont.woff2') format('woff2');
     font-weight: normal;
     font-style: normal;
 }
+
 @font-face {
     font-family: 'magic_cardsnormal';
-    src: url('./fonts/magiccardsnormal-webfont.woff2') format('woff2');
+    src: url('../assets/fonts/magiccardsnormal-webfont.woff2') format('woff2');
     font-weight: normal;
     font-style: normal;
 }
+
 @font-face {
-    font-family: 'oblivionregular';
-    src: url('./fonts/oblivion-font-webfont.woff2') format('woff2');
+    font-family: oblivionregular;
+    src: url('../assets/fonts/oblivion-font-webfont.woff2') format('woff2');
     font-weight: normal;
     font-style: normal;
 }
@@ -43,8 +45,8 @@ a {
 }
 
 .q-field__bottom--animated {
-    transform: translateY(0%);
     position: static;
+    transform: translateY(0%);
     padding-bottom: 1rem;
 }
 
@@ -54,39 +56,39 @@ a {
 
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
-    -webkit-appearance: none;
+    appearance: none;
     margin: 0;
 }
 
 body {
-    font-family: 'oblivionregular';
+    font-family: oblivionregular, serif;
     background:
-        linear-gradient(oklch(from $dark-page l c h / 0.23), oklch(from $dark-page l c h / 0.23)),
-        url('/src/assets/common/bg-common.avif');
+        linear-gradient(oklch(from $dark-page l c h / 23%), oklch(from $dark-page l c h / 23%)),
+        url('/src/assets/images/common/bg-common.avif');
     color: $primary;
     background-color: #040405;
+    animation: fadeIn 0.5s ease-in-out;
 }
 
 .font-secondary {
-    font-family: 'magic_cardsnormal';
+    font-family: 'magic_cardsnormal', serif;
 }
 
 .font-extra {
-    font-family: 'TrajanusBricks';
+    font-family: TrajanusBricks, serif;
 }
 
 .font-quote {
-    font-family: '';
+    font-family: serif;
 }
 
 .sr-only {
-    clip: rect(0 0 0 0);
-    clip-path: inset(50%);
-    height: 1px;
-    overflow: hidden;
     position: absolute;
+    width: 0.0625rem;
+    height: 0.0625rem;
     white-space: nowrap;
-    width: 1px;
+    clip-path: inset(50%);
+    overflow: hidden;
 }
 
 input[type='number'] {

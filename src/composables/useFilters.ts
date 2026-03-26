@@ -1,18 +1,17 @@
-import { useStoreGoods } from 'src/stores/storeGoods';
-import type { Category } from 'src/types';
-import type { Ref } from 'vue';
-import { watch, watchEffect } from 'vue';
 import type { RouteLocationNormalizedLoaded, Router } from 'vue-router';
+import { useStoreGoods } from 'stores/goods.store';
+import type { Category } from 'src/types/types';
+import { watch, watchEffect } from 'vue';
+import type { Ref } from 'vue';
 
 export const useFilters = (
     categories: Ref<Category[]>,
     loadPaginatedGoods: () => Promise<void>,
     route: RouteLocationNormalizedLoaded,
     router: Router,
-    currentPage: Ref<number>
+    currentPage: Ref<number>,
 ) => {
     const storeGoods = useStoreGoods();
-
     const updateSelectedCategories = async () => {
         let selected = categories.value.filter((cat) => cat.active).map((cat) => cat.label);
 
@@ -29,14 +28,12 @@ export const useFilters = (
             await router.push({
                 query: {
                     categories: selected.join(','),
-                    page: currentPage.value
-                }
+                    page: currentPage.value,
+                },
             });
         }
-
         await loadPaginatedGoods();
     };
-
     const resetCategories = async () => {
         categories.value.forEach((cat) => (cat.active = false));
         await router.replace({ query: { page: 1 } });
@@ -53,6 +50,7 @@ export const useFilters = (
                     ? categoriesStr.split(',')
                     : [];
             }
+
             if (route.name === 'black-market') {
                 storeGoods.selectedBlackMarketCategories = categoriesStr
                     ? categoriesStr.split(',')
@@ -62,11 +60,9 @@ export const useFilters = (
             if (!categoriesStr || categoriesStr.length === 0) {
                 categories.value.forEach((cat) => (cat.active = false));
             }
-
             await loadPaginatedGoods();
-        }
+        },
     );
-
     watchEffect(() => {
         categories.value.forEach((cat) => {
             if (route.name === 'workshop') {
@@ -79,6 +75,6 @@ export const useFilters = (
 
     return {
         updateSelectedCategories,
-        resetCategories
+        resetCategories,
     };
 };

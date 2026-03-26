@@ -1,9 +1,10 @@
-import { Notify, QNotifyCreateOptions } from 'quasar';
+import type { QNotifyCreateOptions } from 'quasar';
+import { Notify } from 'quasar';
 
-export const callToast = (
+export const callToastUtils = (
     message: string,
     isSuccess: boolean,
-    position: QNotifyCreateOptions['position'] = 'bottom-right'
+    position: QNotifyCreateOptions['position'] = 'bottom-right',
 ) => {
     Notify.create({
         timeout: 2000,
@@ -12,6 +13,6 @@ export const callToast = (
         textColor: isSuccess ? 'dark' : 'primary',
         position,
         progress: true,
-        progressClass: 'progress'
+        progressClass: 'progress',
     });
 };

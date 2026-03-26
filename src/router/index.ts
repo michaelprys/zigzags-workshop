@@ -1,40 +1,32 @@
-import { defineRouter } from '#q-app/wrappers';
-import { useStoreAuth } from 'src/stores/storeAuth';
-import { useStoreInventory } from 'src/stores/storeInventory';
-// import { delay } from 'src/utils/delay';
 import { createRouter, createWebHistory } from 'vue-router';
+import { useStoreInventory } from 'stores/inventory.store';
+import { useStoreAuth } from 'stores/auth.store';
+import { defineRouter } from '#q-app/wrappers';
 import routes from './routes';
 
 export default defineRouter(function () {
     const createHistory = createWebHistory;
-
     const Router = createRouter({
-        scrollBehavior(to, from, savedPosition) {
-            if (to.hash) {
-                return {
-                    el: to.hash,
-                    behavior: 'smooth'
-                };
-            }
+        scrollBehavior(to, _, savedPosition) {
+            return new Promise((resolve) => {
+                const timeout = 150;
 
-            // if (to.query.page) {
-            //     return { top: savedPosition ? savedPosition.top : 0 };
-            // }
-
-            // if (to.path === from.path) {
-            //     return { top: 0, behavior: 'smooth' };
-            // }
-
-            // if (savedPosition) {
-            //     return savedPosition;
-            // } else {
-            //     return { x: 0, y: 0 };
-            // }
-
-            return { top: 0 };
+                setTimeout(() => {
+                    if (savedPosition) {
+                        resolve(savedPosition);
+                    } else if (to.hash) {
+                        resolve({
+                            el: to.hash,
+                            behavior: 'smooth',
+                        });
+                    } else {
+                        resolve({ top: 0 });
+                    }
+                }, timeout);
+            });
         },
         routes,
-        history: createHistory(process.env.VUE_ROUTER_BASE)
+        history: createHistory(process.env.VUE_ROUTER_BASE),
     });
 
     Router.beforeEach(async (to, from, next) => {
@@ -42,6 +34,10 @@ export default defineRouter(function () {
         const storeInventory = useStoreInventory();
 
         await storeAuth.checkSession();
+
+        if (to.query.session_id && to.query.status === 'success') {
+            return next();
+        }
 
         if (!storeAuth.session) {
             if (to.name === 'vault') {
@@ -57,16 +53,17 @@ export default defineRouter(function () {
 
         if (to.name === 'black-market') {
             await storeInventory.checkInvitation();
+
             if (!storeInventory.invitation || storeInventory.invitation.length === 0) {
                 return next({ name: 'black-market-access' });
             }
+
             return next();
         }
 
         if (to.name === 'good-details') {
             return next();
         }
-
         next();
     });
 

@@ -1,6 +1,5 @@
-//@ts-nocheck
 import { acceptHMRUpdate, defineStore } from 'pinia';
-import supabase from 'src/utils/supabase';
+import supabaseApi from 'src/api/supabase.api';
 import { ref } from 'vue';
 
 type User = {
@@ -16,20 +15,20 @@ type AuthSession = {
 
 export const useStoreAuth = defineStore('auth', () => {
     const session = ref<AuthSession | null>(null);
-
     const checkSession = async () => {
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error } = await supabaseApi.auth.getSession();
+
         if (error) {
             console.error('Session fetch error:', error);
+
             return;
         }
-
         session.value = data.session?.user || null;
     };
 
     return {
         session,
-        checkSession
+        checkSession,
     };
 });
 

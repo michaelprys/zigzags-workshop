@@ -3,18 +3,11 @@ import IconArrow from 'src/components/icons/IconArrow.vue';
 import { onBeforeUnmount, onMounted, ref } from 'vue';
 
 const isCrossed = ref(false);
-
 const handleScroll = () => {
-    if (window.scrollY >= 360) {
-        isCrossed.value = true;
-    } else {
-        isCrossed.value = false;
-    }
+    isCrossed.value = window.scrollY >= 360;
 };
-
 const scrollToTop = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-
     handleScroll();
 };
 
@@ -28,48 +21,91 @@ onBeforeUnmount(() => {
 
 <template>
     <q-btn
-        class="scroll-top-btn fade-in-secondary"
+        flat
+        class="scroll-top-btn"
         :class="{ 'is-crossed': isCrossed, 'is-not-crossed': !isCrossed }"
         aria-label="Go to the beginning of the page"
-        style="box-shadow: inset 0 0 0 12.5rem rgba(255, 255, 255, 0.08)"
-        @click="scrollToTop"
-    >
+        @click="scrollToTop">
         <IconArrow />
+        <div class="btn-glow"></div>
     </q-btn>
 </template>
 
 <style lang="scss" scoped>
-@use 'sass:map';
-
 .scroll-top-btn {
-    z-index: 300;
     position: fixed;
-    bottom: 3.8rem;
-    right: 3rem;
-    border-radius: 0.3rem;
-    background-color: rgba(35, 35, 35, 0.3);
-    padding: 0.5em;
-    -webkit-user-drag: none;
+    z-index: 300;
+    min-height: unset;
+    width: 3rem;
+    height: 3rem;
+    box-shadow: 0 0.5rem 1rem rgb(0 0 0 / 40%);
+    backdrop-filter: blur(0.625rem);
+    background: linear-gradient(135deg, rgb(40 40 40 / 60%) 0%, rgb(20 20 20 / 80%) 100%);
     color: $primary;
-    backdrop-filter: blur(0.5rem);
     transition:
-        transform 0.3s linear,
-        background-color 0.1s linear;
-    box-shadow: inset 0 0 0 12.5rem rgba(255, 255, 255, 0.08);
+        transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275),
+        background-color 0.2s ease,
+        border-color 0.2s ease,
+        box-shadow 0.2s ease;
+    bottom: 3.5rem;
+    right: 3rem;
+    padding: 0;
+    border: 0.0625rem solid rgb(255 255 255 / 8%);
+    border-radius: 0.5rem;
+    overflow: hidden;
+
     & svg {
-        display: flex;
-        align-items: center;
-        justify-content: center;
+        position: relative;
+        z-index: 2;
+        width: 1.2rem;
+        height: 1.2rem;
+        transition: transform 0.3s ease;
     }
+
+    .btn-glow {
+        position: absolute;
+        inset: 0;
+        z-index: 1;
+        opacity: 0;
+        background: radial-gradient(circle at center, rgba($primary, 0.15) 0%, transparent 70%);
+        transition: opacity 0.3s ease;
+    }
+
     &:hover {
-        transform: translateY(-0.5rem);
-        background-color: rgba(35, 35, 35, 1);
+        box-shadow:
+            0 0 1.25rem rgba($primary, 0.15),
+            0 0.625rem 1.5625rem rgb(0 0 0 / 50%);
+        background-color: rgb(45 45 45 / 90%);
+        border-color: rgba($primary, 0.4);
+
+        & svg {
+            transform: translateY(-0.125rem);
+            color: $secondary;
+        }
+
+        .btn-glow {
+            opacity: 1;
+        }
     }
+
     &.is-crossed {
-        transform: translateY(0);
+        transform: translateY(0) scale(1);
+        pointer-events: all;
     }
+
     &.is-not-crossed {
-        transform: translateY(700%);
+        transform: translateY(6rem) scale(0.8);
+        opacity: 0;
+        pointer-events: none;
+    }
+}
+
+@media (max-width: $breakpoint-xs) {
+    .scroll-top-btn {
+        right: 1.5rem;
+        bottom: 2rem;
+        width: 2.5rem;
+        height: 2.5rem;
     }
 }
 </style>

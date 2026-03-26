@@ -1,176 +1,156 @@
-<script setup>
-import { useQuasar } from 'quasar';
-import { useStoreAuth } from 'src/stores/storeAuth';
-import { useStoreInventory } from 'src/stores/storeInventory';
-import { callToast } from 'src/utils/callToast';
-import { delay } from 'src/utils/delay';
-import supabase from 'src/utils/supabase';
-import { onMounted, ref, watch } from 'vue';
+<script setup lang="ts">
+import { callToastUtils } from 'src/utils/callToast.utils';
+import { useStoreInventory } from 'stores/inventory.store';
+import { useStoreAuth } from 'stores/auth.store';
+import supabaseApi from 'src/api/supabase.api';
 import { useRouter } from 'vue-router';
+import { useQuasar } from 'quasar';
+import { ref, watch } from 'vue';
 
 const storeAuth = useStoreAuth();
 const storeInventory = useStoreInventory();
 const router = useRouter();
 const $q = useQuasar();
+const userFaction = ref<string>('');
+const userName = ref<string>('');
+const syncUserData = () => {
+    const metadata = storeAuth.session?.user_metadata;
 
-const isLeft = ref(false);
+    if (!metadata) return;
 
+    if (metadata.first_name) userName.value = metadata.first_name;
+
+    if (metadata.faction === 'Horde') userFaction.value = 'horde';
+    else if (metadata.faction === 'Alliance') userFaction.value = 'alliance';
+    else if (metadata.faction === 'No faction (Outsiders)') userFaction.value = 'outsiders';
+};
 const leaveVault = async () => {
-    const { error } = await supabase.auth.signOut();
+    const { error } = await supabaseApi.auth.signOut();
 
     if (error) {
-        callToast(error ? 'Unable to leave the vault' : 'Something went wrong', false);
-        return;
+        callToastUtils('Unable to leave the vault', false);
     } else {
         await storeAuth.checkSession();
-        await delay(150);
-        callToast('Safe travels!', true);
+        callToastUtils('Safe travels!', true);
         storeInventory.inventoryGoods = [];
-        isLeft.value = true;
-    }
-};
-
-const alert = () => {
-    $q.dialog({
-        dark: true,
-        title: 'Exit',
-        message: 'Are you sure you want to leave?',
-        ok: {
-            label: 'Yes',
-            color: 'secondary',
-            'text-color': 'dark'
-        },
-        cancel: {
-            label: 'No',
-            flat: true,
-            'text-color': 'primary'
-        },
-        style: 'padding: 1rem; border-radius: 0.5em'
-    })
-        .onOk(() => {
-            leaveVault()
-                .then(() => {
-                    return router.push({ name: 'access-vault' });
-                })
-                .catch((err) => {
-                    console.error('Error leaving vault: ', err);
-                });
-        })
-        .onCancel(() => {})
-        .onDismiss(() => {});
-};
-
-const userFaction = ref('');
-
-const determineFaction = async () => {
-    const faction = storeAuth.session?.user_metadata.faction;
-
-    if (faction === 'Horde') {
-        userFaction.value = 'horde';
-    } else if (faction === 'Alliance') {
-        userFaction.value = 'alliance';
-    } else if (faction === 'No faction (Outsiders)') {
-        userFaction.value = 'outsiders';
-    } else {
-        await delay(150);
+        await router.push({ name: 'access-vault' });
         userFaction.value = '';
+        userName.value = '';
     }
 };
+const alertExit = () => {
+    $q.dialog({
+        title: 'Exit Vault',
+        message: 'Are you sure you want to leave your treasures behind?',
+        dark: true,
+        class: 'custom-modal-card',
+        ok: {
+            label: 'Yes, Leave',
+            color: 'secondary',
+            'text-color': 'dark',
+            unelevated: true,
+            class: 'confirm-btn',
+        },
+        cancel: { label: 'Cancel', flat: true, color: 'grey-7', class: 'cancel-btn' },
+    }).onOk(leaveVault);
+};
+const imgSrc = (ext: string) => {
+    if (!userFaction.value) return '';
 
-const imgSrc = (ext) => {
-    return new URL(`/src/assets/vault/${userFaction.value}.${ext}`, import.meta.url).href;
+    return new URL(`/src/assets/images/vault/${userFaction.value}.${ext}`, import.meta.url).href;
 };
 
-onMounted(async () => {
-    await storeAuth.checkSession();
-});
-
-watch(
-    () => storeAuth.session?.user_metadata?.faction,
-    () => {
-        determineFaction();
-    },
-    { immediate: true }
-);
+watch(() => storeAuth.session, syncUserData, { immediate: true, deep: true });
 </script>
 
 <template>
-    <div class="header">
-        <div class="title-wrapper">
-            <div class="q-ma-none" style="cursor: pointer">
-                <q-img
-                    class="faction-img"
-                    :src="`${imgSrc('avif')}`"
-                    width="819px"
-                    height="819px"
-                />
+    <div class="header-grid">
+        <div class="side-item">
+            <q-img
+                v-if="userFaction"
+                class="faction-img cursor-pointer"
+                :src="imgSrc('avif')"
+                no-spinner>
                 <q-tooltip
                     :delay="500"
-                    class="bg-primary text-center"
-                    anchor="center start"
-                    self="bottom end"
-                >
-                    <span class="text-caption text-negative">{{ userFaction }}</span>
+                    anchor="bottom right"
+                    self="center start"
+                    class="bg-primary column text-center text-dark"
+                    style="width: 11.25rem">
+                    <span
+                        class="text-caption text-negative text-weight-bolder uppercase letter-spacing-1">
+                        {{ userFaction }}
+                    </span>
+                    <span>Your chosen faction</span>
                 </q-tooltip>
-            </div>
-
-            <h2 class="title text-center text-h6">
-                {{ storeAuth.session?.user_metadata?.first_name }}'s Inventory
+            </q-img>
+        </div>
+        <div class="title-wrapper">
+            <h2 class="vault-title q-ma-none text-weight-bold">
+                {{ userName || 'Adventurer' }}'s Inventory
             </h2>
         </div>
-
-        <q-btn class="alert-btn" icon="logout" color="primary" flat dense @click="alert"></q-btn>
+        <div class="side-item justify-end">
+            <q-btn
+                style="border-radius: 0.375rem; padding: 0.5em"
+                icon="logout"
+                color="primary"
+                flat
+                dense
+                size="md"
+                @click="alertExit" />
+        </div>
     </div>
 </template>
 
 <style lang="scss" scoped>
-@use 'sass:map';
-
-.header {
+.header-grid {
     display: grid;
-    place-items: center;
-    grid-template-columns: 1fr auto 1fr;
-    color: $primary;
-    font-size: 1.2rem;
-    text-align: center;
-    position: relative;
+    grid-template-columns: 3.75rem 1fr 3.75rem;
+    align-items: center;
+    border-bottom: 0.0625rem solid rgb(255 255 255 / 8%);
+    padding-bottom: 0.75rem;
+    width: 100%;
 }
-.faction-img {
-    width: 2.2rem !important;
-    height: 2.5rem !important;
-}
-.title {
-    grid-column-start: 2;
-}
-.title-wrapper {
-    grid-column-start: 2;
+
+.side-item {
     display: flex;
     align-items: center;
-    gap: 16px;
-}
-.alert-btn {
-    justify-self: end;
-    grid-column-start: 3;
+    min-height: 2.5rem;
 }
 
-@media (width <= $breakpoint-md) {
-    .title {
-        font-size: map.get($subtitle1, 'size');
+.faction-img {
+    width: 1.75rem;
+    height: 2rem;
+    filter: drop-shadow(0 0 0.5rem rgba($primary, 0.3));
+}
+
+.title-wrapper {
+    letter-spacing: 0.0625rem;
+    color: $primary;
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.vault-title {
+    font-size: 1.1rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+@media (width <= 37.5rem) {
+    .vault-title {
+        font-size: 0.9rem;
     }
+
+    .header-grid {
+        grid-template-columns: 2.5rem 1fr 2.5rem;
+    }
+
     .faction-img {
-        width: 1.8rem !important;
-        height: 2rem !important;
-    }
-}
-@media (width <= $breakpoint-sm) {
-    .header {
-        display: flex;
-        justify-content: space-between;
-    }
-}
-@media (width <= $breakpoint-xs) {
-    .title {
-        font-size: map.get($subtitle2, 'size');
+        width: 1.5rem;
+        height: 1.75rem;
     }
 }
 </style>

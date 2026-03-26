@@ -2,21 +2,10 @@
 import { onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 
-const isVideoLoaded = ref(false);
-const onLoaded = () => {
-    isVideoLoaded.value = true;
-    setTimeout(() => {
-        isVideoLoaded.value = true;
-    }, 100);
+const isZigzagLoaded = ref(false);
+const onImgLoaded = () => {
+    isZigzagLoaded.value = true;
 };
-const getSrc = (ext: string) => {
-    return new URL(`/src/assets/footer/zigzag.${ext}`, import.meta.url).href;
-};
-onMounted(() => {
-    const img = new Image();
-    img.onload = onLoaded;
-    img.src = getSrc('avif');
-});
 const quotes = [
     'Not everything that glitters is worth a coin — but Zigzag always has what you need',
     'Some deals are too good for daylight.',
@@ -28,16 +17,14 @@ const quotes = [
     "A goblin's silence is worth more than gold... unless you're buying.",
     'The shadows whisper, but only the brave dare to listen.',
     'A vault is only as strong as its keeper.',
-    'Some locks are meant to be opened, some secrets are meant to be kept.'
+    'Some locks are meant to be opened, some secrets are meant to be kept.',
 ];
 const quote = ref<string>('');
-
 const lastQuoteIdx = ref<number | null>(null);
-
 const randomizeQuote = (): string => {
     if (quotes.length === 0) return '';
-
     let randIdx = Math.floor(Math.random() * quotes.length);
+
     if (randIdx === lastQuoteIdx.value) {
         randIdx = Math.floor(Math.random() * quotes.length);
     }
@@ -45,15 +32,26 @@ const randomizeQuote = (): string => {
 
     return quotes[randIdx] ?? '';
 };
-
 const route = useRoute();
+
 watch(
     () => route.name,
     () => {
         quote.value = randomizeQuote();
     },
-    { immediate: true }
+    { immediate: true },
 );
+onMounted(() => {
+    const img = new Image();
+
+    img.src = new URL('/src/assets/images/footer/zigzag.avif', import.meta.url).href;
+
+    if (img.complete) {
+        onImgLoaded();
+    } else {
+        img.onload = onImgLoaded;
+    }
+});
 </script>
 
 <template>
@@ -62,13 +60,16 @@ watch(
             <div class="wrapper">
                 <q-img
                     class="image"
-                    src="~assets/footer/zigzag.avif"
+                    src="~assets/images/footer/zigzag.avif"
                     style="width: 9.375rem; height: 9.375rem"
                     alt="Zigzag"
-                />
+                    @load="onImgLoaded" />
                 <video
-                    :style="{ opacity: isVideoLoaded ? 1 : 0 }"
                     class="candle"
+                    :style="{
+                        opacity: isZigzagLoaded ? 1 : 0,
+                        transition: 'opacity 0.6s ease-in-out',
+                    }"
                     width="1920"
                     height="1080"
                     loop
@@ -76,9 +77,8 @@ watch(
                     autoplay
                     disablePictureInPicture="true"
                     disableRemotePlayback="true"
-                    controlslist="nodownload nofullscreen noremoteplayback"
-                >
-                    <source src="~assets/footer/candle.mp4" type="video/mp4" />
+                    controlslist="nodownload nofullscreen noremoteplayback">
+                    <source src="~assets/images/footer/candle.mp4" type="video/mp4" />
                 </video>
             </div>
         </div>
@@ -92,8 +92,7 @@ watch(
                 text-align: center;
                 padding-top: 2.625em;
                 padding-bottom: 4.0625em;
-            "
-        >
+            ">
             <Transition name="fade" mode="out-in">
                 <q :key="quote" class="quote font-quote text-h6 text-info">
                     <i>{{ quote }}</i>
@@ -107,16 +106,18 @@ watch(
 @use 'sass:map';
 
 .footer {
-    background-color: transparent;
     z-index: 0;
+    background-color: transparent;
 }
+
 .zigzag {
     display: flex;
-    align-items: center;
     justify-content: center;
+    align-items: center;
+    user-select: none;
     padding-top: 8.5em;
     padding-bottom: 1.875em;
-    user-select: none;
+
     &::before {
         content: '';
         position: absolute;
@@ -126,38 +127,40 @@ watch(
         width: 4rem;
         height: 4rem;
         background:
-            linear-gradient(
-                oklch(from $dark-page l c h / 0.23),
-                oklch(from $dark-page l c h / 0.23)
-            ),
-            url('/src/assets/footer/patch.avif');
+            linear-gradient(oklch(from $dark-page l c h / 23%), oklch(from $dark-page l c h / 23%)),
+            url('/src/assets/images/footer/patch.avif');
         background-position: center;
         pointer-events: none;
-        mask-image: radial-gradient(circle, rgb(255, 255, 255) 50%, rgba(255, 255, 255, 0) 100%);
+        mask-image: radial-gradient(circle, rgb(255 255 255) 50%, rgb(255 255 255 / 0%) 100%);
     }
 }
+
 .wrapper {
     position: relative;
 }
+
 .image {
-    height: 9.375rem;
     width: 9.375rem;
+    height: 9.375rem;
     filter: brightness(70%) contrast(93%);
-    transition: filter 0.2s linear;
     cursor: pointer;
+    transition: filter 0.2s linear;
+
     &:hover {
         filter: brightness(90%);
     }
 }
+
 .candle {
     position: absolute;
     width: 1.875rem;
     height: 1.875rem;
+    filter: brightness(110%) blur(0.0437rem);
+    object-fit: cover;
     left: 0.9rem;
     top: 3.75rem;
     mix-blend-mode: screen;
-    object-fit: cover;
-    filter: brightness(110%) blur(0.0437rem);
     margin-top: 0.5rem;
+    pointer-events: none;
 }
 </style>

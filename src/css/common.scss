@@ -1,8 +1,8 @@
-/* Transitions */
 .fade-enter-active,
 .fade-leave-active {
     transition: opacity 150ms ease-in-out;
 }
+
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
@@ -12,6 +12,7 @@
 .remove-leave-active {
     transition: opacity 40ms ease-in;
 }
+
 .remove-enter-from,
 .remove-leave-to {
     opacity: 0;
@@ -24,35 +25,38 @@
         transform 400ms ease-in-out,
         opacity 400ms ease-in-out;
 }
+
 .list-enter-from,
 .list-leave-to {
+    transform: translateX(1.875rem);
     opacity: 0;
-    transform: translateX(30px);
 }
+
 .list-leave-active {
-    opacity: 0;
     position: absolute;
+    opacity: 0;
 }
 
 .pagination-enter-active,
 .pagination-leave-active {
     transition: opacity 300ms ease-in-out;
 }
+
 .pagination-leave-active {
     display: none;
     position: absolute;
 }
 
 .separator {
+    display: block;
+    position: relative;
+    z-index: 100;
+    width: 100%;
+    height: 0.0625rem;
+    background-color: #1e1e1e;
     margin-inline: auto;
     content: '';
-    width: 100%;
-    height: 1px;
     top: 0;
-    background-color: #1e1e1e;
-    position: relative;
-    display: block;
-    z-index: 100;
 }
 
 .separator::before {
@@ -60,43 +64,46 @@
     position: absolute;
     top: 0.375rem;
     width: 100%;
-    height: 1px;
+    height: 0.0625rem;
     background-color: #1e1e1e;
 }
+
 .separator::after {
     content: '';
     position: absolute;
 }
 
 .text-glow-dark {
-    text-shadow: 0.1875rem 0.3125rem 0.3125rem rgba(21, 21, 21, 0.5);
+    text-shadow: 0.1875rem 0.3125rem 0.3125rem rgb(21 21 21 / 50%);
 }
 
 .vault-form {
+    position: relative;
     width: 100%;
     height: 100%;
-    border-radius: $rounded;
-    position: relative;
     background-color: $dark;
-    border: 1px solid rgba(255, 255, 255, 0.125);
+    border-radius: $rounded;
+    border: 0.0625rem solid rgb(255 255 255 / 12.5%);
 }
+
 .vault-form::before {
     position: absolute;
     inset: 0;
+    z-index: -2;
+    box-shadow: rgb(0 0 0 / 24%) 0 0.1875rem 0.5rem;
+    background-color: rgb(8 8 8);
     inset-inline: 0;
     content: '';
-    border-radius: 0.75rem;
-    border: 1px solid rgba(255, 255, 255, 0.125);
+    border: 0.0625rem solid rgb(255 255 255 / 12.5%);
     border-radius: $rounded;
-    box-shadow: rgba(0, 0, 0, 0.24) 0px 3px 8px;
-    z-index: -2;
-    background-color: rgb(8, 8, 8);
 }
+
 .vault-form__inner {
     position: relative;
 }
+
 .vault-form__title {
-    text-shadow: rgba(0, 0, 0, 0.3) 3px 3px 6px;
+    text-shadow: rgb(0 0 0 / 30%) 0.1875rem 0.1875rem 0.375rem;
 }
 
 .skeleton {

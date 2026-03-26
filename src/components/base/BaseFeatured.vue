@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { useQuery } from '@pinia/colada';
-import { useStoreGoods } from 'src/stores/storeGoods';
-import { delay } from 'src/utils/delay';
 import { computed, onBeforeUnmount, ref, watch, watchEffect } from 'vue';
+import { delayUtils } from 'src/utils/delay.utils';
+import { useStoreGoods } from 'stores/goods.store';
+import { useQuery } from '@pinia/colada';
 
 type Good = {
     id: number;
@@ -12,48 +12,43 @@ type Good = {
 
 const storeGoods = useStoreGoods();
 const activeSlide = ref(1);
-
 const { data: queryData } = useQuery<Good[] | undefined>({
     key: ['featuredGoods'],
     query: () => storeGoods.loadFeaturedGoods(),
-    staleTime: 1000 * 60 * 5
+    staleTime: 1000 * 60 * 5,
 });
-
 const slideGroup = computed(() => {
     const img = queryData.value ?? [];
 
     return [
         [img[4], img[3], img[8]],
         [img[0], img[1], img[2]],
-        [img[5], img[6], img[7]]
+        [img[5], img[6], img[7]],
     ];
 });
-
 const imgLoaded = ref<Record<number, boolean>>({});
 
 watch(
     () => queryData.value,
     (newQuery) => {
         if (!newQuery) return;
-
         newQuery.forEach((good) => {
             const img = new Image();
+
             img.onload = async () => {
                 if (img.complete) {
                     imgLoaded.value[good.id] = true;
                 } else {
-                    await delay(200);
+                    await delayUtils(200);
                     imgLoaded.value[good.id] = true;
                 }
             };
             img.src = good.image_url;
         });
     },
-    { immediate: true }
+    { immediate: true },
 );
-
 const isAutoplaying = ref(false);
-
 const toggleAutoplay = () => {
     isAutoplaying.value = window.innerWidth > 1111;
 };
@@ -61,9 +56,7 @@ const toggleAutoplay = () => {
 watchEffect(() => {
     toggleAutoplay();
 });
-
 window.addEventListener('resize', toggleAutoplay);
-
 onBeforeUnmount(() => {
     window.removeEventListener('resize', toggleAutoplay);
 });
@@ -80,7 +73,6 @@ onBeforeUnmount(() => {
                         It's yours... for a price!
                     </h3>
                 </div>
-
                 <div class="q-pa-md">
                     <q-carousel
                         v-model="activeSlide"
@@ -95,21 +87,18 @@ onBeforeUnmount(() => {
                         :autoplay="isAutoplaying"
                         infinite
                         arrows
-                        height="24rem"
-                    >
+                        height="24rem">
                         <q-carousel-slide
                             v-for="(slide, idx) in slideGroup"
                             :key="idx"
                             :name="idx + 1"
-                            class="slide cursor-pointer no-wrap"
-                        >
+                            class="slide cursor-pointer no-wrap">
                             <div class="slide-inner fit items-center row">
                                 <div
                                     v-for="(img, imgIdx) in slide"
                                     :key="imgIdx + 1"
                                     class="slide-content relative full-height"
-                                    :class="imgIdx === 1 ? 'col-5' : 'col'"
-                                >
+                                    :class="imgIdx === 1 ? 'col-5' : 'col'">
                                     <div style="position: relative; height: 100%">
                                         <q-skeleton
                                             v-if="img?.id && !imgLoaded[img.id]"
@@ -118,14 +107,11 @@ onBeforeUnmount(() => {
                                             animation-speed="1800"
                                             dark
                                             square
-                                            :style="imgIdx === 1 ? 'col-5' : 'col'"
-                                        >
-                                        </q-skeleton>
+                                            :style="imgIdx === 1 ? 'col-5' : 'col'"></q-skeleton>
                                         <q-img
                                             :src="img?.image_url"
                                             :alt="img?.name"
-                                            class="image full-height inner shadow-1"
-                                        />
+                                            class="image full-height inner shadow-1" />
                                     </div>
                                 </div>
                             </div>
@@ -135,7 +121,6 @@ onBeforeUnmount(() => {
             </div>
         </div>
     </section>
-
     <div class="divider"></div>
 </template>
 
@@ -150,28 +135,35 @@ onBeforeUnmount(() => {
 :deep(.q-carousel__control) {
     margin-top: -2rem;
 }
+
 .wrapper {
     overflow: hidden;
 }
+
 .carousel {
     width: 81.25rem !important;
 }
+
 .slide-content {
-    margin-right: 16px;
+    margin-right: 1rem;
     border-radius: $rounded;
+
     &:last-child {
         margin-right: 0;
     }
+
     & .q-img {
         border-radius: $rounded !important;
     }
 }
+
 .skeleton {
     position: absolute;
     inset: 0;
     background-color: $placeholder-secondary;
     border-radius: $rounded;
 }
+
 .image {
     border-radius: $rounded;
 }
@@ -180,18 +172,22 @@ onBeforeUnmount(() => {
     #featured {
         padding-bottom: 5em;
     }
+
     .title {
         font-size: map.get($h4, 'size');
     }
+
     .subtitle {
         font-size: map.get($body1, 'size');
         margin-top: 0.5rem;
     }
+
     :deep(.q-field__label) {
         font-size: map.get($body2, 'size');
     }
 }
-@media (width <= 1300px) {
+
+@media (width <= 81.25rem) {
     .carousel {
         width: 75rem !important;
         padding-inline: 2.375rem;

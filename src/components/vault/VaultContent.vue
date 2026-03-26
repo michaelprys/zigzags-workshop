@@ -1,51 +1,67 @@
-<script setup>
-import { useQuasar } from 'quasar';
-import { useStoreInventory } from 'src/stores/storeInventory';
-import { usePaginatedInventoryGoods } from 'src/use/usePaginatedInventoryGoods';
-import { computed } from 'vue';
+<script lang="ts" setup>
+import { usePaginatedInventoryGoods } from 'src/composables/usePaginatedInventoryGoods';
+import { useStoreInventory } from 'stores/inventory.store';
 import { vDraggable } from 'vue-draggable-plus';
+import { useQuasar } from 'quasar';
+import { computed } from 'vue';
+
+interface InventoryItem {
+    good_id: number;
+    quantity: number;
+    goods: {
+        name: string;
+        short_description: string;
+        image_url: string;
+    };
+}
+
+interface DraggableEvent {
+    newIndex: number;
+    oldIndex: number;
+}
 
 const storeInventory = useStoreInventory();
 const { updateGoodSlot, removeGoodFromInventory } = storeInventory;
-const { inventoryGoodsPerPage } = usePaginatedInventoryGoods();
-
-const inventoryGoods = computed(() => storeInventory.inventoryGoods);
-
+const { inventoryGoodsPerPage, loadPaginatedInventoryGoods } = usePaginatedInventoryGoods();
+const inventoryGoods = computed<InventoryItem[]>(() => storeInventory.inventoryGoods);
 const $q = useQuasar();
 
-const handleRemoveItem = async (selectedGood) => {
+const handleRemoveItem = (selectedGoodId: number) => {
     $q.dialog({
+        title: 'Remove Item',
+        message: 'This action is irreversible. Destroy this treasure?',
         dark: true,
-        title: 'Remove item',
-        message: 'This action is irreversible',
+        class: 'custom-modal-card',
         ok: {
-            label: 'Yes',
+            label: 'Yes, Destroy',
             color: 'secondary',
-            'text-color': 'dark'
+            'text-color': 'dark',
+            unelevated: true,
+            class: 'confirm-btn',
         },
         cancel: {
-            label: 'No',
+            label: 'Keep it',
             flat: true,
-            'text-color': 'primary'
+            color: 'grey-7',
+            class: 'cancel-btn',
         },
-        style: 'padding: 1rem'
-    })
-        .onOk(async () => {
-            try {
-                await removeGoodFromInventory(selectedGood);
-            } catch (err) {
-                console.error('Error removing good from inventory: ', err);
-            }
-        })
-        .onCancel(() => {})
-        .onDismiss(() => {});
+    }).onOk(async () => {
+        try {
+            await removeGoodFromInventory(selectedGoodId);
+            await loadPaginatedInventoryGoods();
+        } catch (err) {
+            console.error(err);
+        }
+    });
 };
 
-const handleSlots = async (event) => {
-    const goodId = inventoryGoods[event.newIndex].good_id;
-    const nextSlot = event.newIndex;
-    await updateGoodSlot(goodId, nextSlot);
-    await loadInventoryGoods();
+const handleSlots = async (event: DraggableEvent) => {
+    const item = inventoryGoods.value[event.newIndex];
+
+    if (item) {
+        await updateGoodSlot(item.good_id, event.newIndex + 1);
+        await loadPaginatedInventoryGoods();
+    }
 };
 </script>
 
@@ -55,15 +71,13 @@ const handleSlots = async (event) => {
             inventoryGoods,
             {
                 animation: 150,
-                onUpdate: handleSlots
-            }
+                onUpdate: handleSlots,
+            },
         ]"
-        class="q-mt-lg slots"
-    >
+        class="q-mt-lg slots">
         <template v-for="(slot, idx) in inventoryGoodsPerPage" :key="idx">
             <li class="slot">
                 <div class="placeholder"></div>
-
                 <Transition name="remove">
                     <div v-if="inventoryGoods[idx] && inventoryGoods[idx].goods">
                         <q-tooltip
@@ -71,33 +85,26 @@ const handleSlots = async (event) => {
                             anchor="bottom right"
                             self="center start"
                             class="bg-primary column text-center text-dark"
-                            style="width: 11.25rem"
-                        >
-                            <span class="text-caption text-negative">{{
-                                inventoryGoods[idx].goods.name
-                            }}</span>
+                            style="width: 11.25rem">
+                            <span class="text-caption text-negative text-weight-bold">
+                                {{ inventoryGoods[idx].goods.name }}
+                            </span>
                             <span>{{ inventoryGoods[idx].goods.short_description }}</span>
                         </q-tooltip>
-
                         <q-btn
                             class="btn-close"
                             dense
                             flat
                             size="xs"
                             icon="close"
-                            @click="handleRemoveItem(inventoryGoods[idx].good_id)"
-                        ></q-btn>
-
+                            @click.stop="handleRemoveItem(inventoryGoods[idx].good_id)" />
                         <div class="quantity">
                             {{ inventoryGoods[idx].quantity }}
                         </div>
                         <q-img
                             class="img"
                             :src="inventoryGoods[idx].goods.image_url"
-                            width="1024px"
-                            height="1024px"
-                            style="width: 100%; height: 100%"
-                        />
+                            style="width: 100%; height: 100%" />
                     </div>
                 </Transition>
             </li>
@@ -105,112 +112,163 @@ const handleSlots = async (event) => {
     </ul>
 </template>
 
+<style lang="scss">
+.custom-modal-card.q-dialog-plugin {
+    box-shadow: 0 1.875rem 3.75rem rgb(0 0 0 / 70%) !important;
+    background:
+        radial-gradient(circle at top left, rgb(255 255 255 / 3%) 0%, transparent 40%),
+        linear-gradient(180deg, #161616 0%, #0d0d0d 100%) !important;
+    border: 0.0625rem solid rgb(255 255 255 / 10%) !important;
+    border-radius: 1rem !important;
+    padding: 1.5rem !important;
+
+    .q-dialog__title {
+        font-size: 1.25rem;
+        font-weight: 900;
+        letter-spacing: 0.0625rem;
+        color: $secondary;
+        text-transform: uppercase;
+    }
+
+    .q-dialog__message {
+        font-size: 0.95rem;
+        color: #888;
+        margin-top: 0.5rem;
+    }
+
+    .q-card__actions {
+        padding-top: 2rem;
+        gap: 1rem;
+
+        .confirm-btn {
+            flex-grow: 1;
+            height: 2.75rem;
+            font-weight: 800;
+            border-radius: 0.375rem;
+        }
+
+        .cancel-btn {
+            height: 2.75rem;
+            font-weight: 700;
+            border-radius: 0.375rem;
+            padding-inline: 1.5rem;
+        }
+    }
+}
+</style>
+
 <style lang="scss" scoped>
 @use 'sass:map';
 
 .slots {
     display: grid;
-    grid-template-columns: repeat(11, 1fr);
-    gap: 1rem;
-    width: 100%;
     place-items: center;
+    width: fit-content;
+    margin-inline: auto;
+    gap: 1rem;
+    grid-template-columns: repeat(11, 5.25rem);
+    padding-left: 0;
+    list-style: none;
+
+    @media (width <= 75rem) {
+        grid-template-columns: repeat(8, 5.25rem);
+    }
+
+    @media (width <= 61.25rem) {
+        grid-template-columns: repeat(6, 5.25rem);
+    }
+
+    @media (width <= $breakpoint-sm) {
+        grid-template-columns: repeat(5, 5.25rem);
+    }
+
+    @media (width <= $breakpoint-xs) {
+        grid-template-columns: repeat(3, 5.25rem);
+    }
 }
+
 .slot {
-    position: relative;
-    cursor: pointer;
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 0.25em;
+    position: relative;
     width: 5.25rem;
     height: 5.25rem;
+    box-shadow: 0 0.25rem 0.625rem rgb(0 0 0 / 70%);
+    cursor: pointer;
+    padding: 0.25em;
     border-radius: 0.25rem;
     overflow: hidden;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.7);
+
     &:hover {
-        box-shadow: 0 1px 12px rgba(92, 90, 78, 0.6);
+        box-shadow: 0 0.0625rem 0.75rem rgb(92 90 78 / 60%);
     }
 }
+
 .btn-close {
     position: absolute;
     top: 0;
     right: 0;
     z-index: 3;
-    background-color: rgb(23, 23, 23);
+    background-color: rgb(23 23 23);
 }
+
 .quantity {
-    position: absolute;
-    bottom: 3px;
-    right: 3px;
-    padding-inline: 0.25em;
-    height: 1.0625rem;
-    background-color: $dark;
-    color: $primary;
-    z-index: 1;
-    border-radius: 0.25rem;
     display: flex;
     justify-content: center;
     align-items: center;
-    user-select: none;
-    border: 2px solid rgba(255, 255, 255, 0.1);
+    position: absolute;
+    z-index: 1;
+    height: 1.0625rem;
     font-size: 0.75rem;
+    color: $primary;
+    background-color: $dark;
+    user-select: none;
+    bottom: 0.1875rem;
+    right: 0.1875rem;
+    padding-inline: 0.25em;
+    border-radius: 0.25rem;
+    border: 0.125rem solid rgb(255 255 255 / 10%);
 }
+
 .placeholder {
     position: absolute;
     width: 100%;
     height: 100%;
-    background: linear-gradient(145deg, rgba(45, 45, 45, 0.7), rgba(25, 25, 25, 0.9));
-    border-radius: 6px;
-    box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.8);
-    border: 2px solid rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 0 0.375rem rgb(0 0 0 / 80%);
+    background: linear-gradient(145deg, rgb(45 45 45 / 70%), rgb(25 25 25 / 90%));
     transition:
         border-color 0.15s,
         box-shadow 0.15s;
+    border-radius: 0.375rem;
+    border: 0.125rem solid rgb(255 255 255 / 5%);
+
     &::before {
         content: '';
         position: absolute;
         inset: 0;
-        background: radial-gradient(circle at top left, rgba(255, 255, 255, 0.2), transparent);
+        background: radial-gradient(circle at top left, rgb(255 255 255 / 20%), transparent);
         border-radius: 0.18rem;
     }
 }
+
 .img {
     position: absolute;
-    top: 50%;
-    left: 50%;
     transform: translateX(-50%) translateY(-50%);
     width: 100%;
     height: 100%;
-    user-select: none;
-    border-radius: $rounded;
     filter: contrast(95%) brightness(95%);
+    user-select: none;
+    top: 50%;
+    left: 50%;
+    border-radius: $rounded;
+
     &::before {
         content: '';
         position: absolute;
         inset: 0;
         border-radius: $rounded;
         z-index: 3;
-    }
-}
-
-@media (width <= 75rem) {
-    .slots {
-        grid-template-columns: repeat(8, 1fr);
-    }
-}
-@media (width <= 61.25rem) {
-    .slots {
-        grid-template-columns: repeat(6, 1fr);
-    }
-}
-@media (width <= $breakpoint-sm) {
-    .slots {
-        grid-template-columns: repeat(5, 1fr);
-    }
-}
-@media (width <= $breakpoint-xs) {
-    .slots {
-        grid-template-columns: repeat(3, 1fr);
     }
 }
 </style>

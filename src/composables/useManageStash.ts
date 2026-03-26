@@ -1,10 +1,9 @@
+import { type Good, useStoreGoods } from 'stores/goods.store';
 import { Notify } from 'quasar';
-import { type Good, useStoreGoods } from 'src/stores/storeGoods';
 import { computed } from 'vue';
 
 export const useManageStash = () => {
     const storeGoods = useStoreGoods();
-
     const showToast = (message: string, color: 'positive' | 'negative') => {
         Notify.create({
             timeout: 2000,
@@ -19,12 +18,11 @@ export const useManageStash = () => {
                     icon: 'close',
                     color: color === 'positive' ? 'dark' : 'primary',
                     dense: true,
-                    size: 'xs'
-                }
-            ]
+                    size: 'xs',
+                },
+            ],
         });
     };
-
     const addToStash = async (selected: Good) => {
         let existingGood = storeGoods.stashGoods.find((good) => good.slug === selected.slug);
 
@@ -41,12 +39,13 @@ export const useManageStash = () => {
                 description: selected.description,
                 source: selected.source,
                 requires_access: selected.requires_access,
-                debuff: selected.debuff ?? ''
+                debuff: selected.debuff ?? '',
             };
             storeGoods.stashGoods.push(existingGood);
             showToast('Item added to stash', 'positive');
         } else {
             const currentQty = existingGood.quantity ?? 0;
+
             if (currentQty < 5) {
                 existingGood.quantity = currentQty + 1;
                 showToast('Item added to stash', 'positive');
@@ -55,35 +54,31 @@ export const useManageStash = () => {
             }
         }
     };
-
     const removeFromStash = (goodIdx: number) => {
         storeGoods.stashGoods.splice(goodIdx, 1);
     };
-
     const basePrice = computed(() => {
         return storeGoods.stashGoods.reduce(
             (total, currentGood) => total + currentGood.price * (currentGood.quantity ?? 0),
-            0
+            0,
         );
     });
-
     const goblinTax = computed(() => {
         return Math.floor(basePrice.value * 0.05);
     });
-
     const finalPrice = computed(() => {
         return basePrice.value + goblinTax.value;
     });
-
     const decreaseGoodQuantity = (good: Good) => {
         const currentQty = good.quantity ?? 0;
+
         if (currentQty > 1) {
             good.quantity = currentQty - 1;
         }
     };
-
     const increaseGoodQuantity = (good: Good) => {
         const currentQty = good.quantity ?? 0;
+
         if (currentQty < 5) {
             good.quantity = currentQty + 1;
         }
@@ -96,6 +91,6 @@ export const useManageStash = () => {
         addToStash,
         removeFromStash,
         decreaseGoodQuantity,
-        increaseGoodQuantity
+        increaseGoodQuantity,
     };
 };
