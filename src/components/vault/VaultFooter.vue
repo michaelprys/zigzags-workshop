@@ -42,12 +42,10 @@ const handlePaste = (e: ClipboardEvent) => {
 
 onMounted(async () => {
     await storeBalance.displayBalance();
-
     const query = route.query;
     if (query.session_id && query.status === 'success') {
         const amount = Number(query.amount);
         const pType = query.paymentType as PaymentType;
-
         if (!isNaN(amount) && pType) {
             await storeBalance.topUpBalance(query.session_id as string, 'success', amount, pType);
             await router.replace({ query: {} });
@@ -58,9 +56,7 @@ onMounted(async () => {
 const onSubmit = async () => {
     if (topUpForm.value) {
         const isValid = await topUpForm.value.validate();
-        if (isValid) {
-            await handlePayment(topUpForm.value);
-        }
+        if (isValid) await handlePayment(topUpForm.value);
     }
 };
 
@@ -242,13 +238,16 @@ const getMinLimit = (): number => {
                     </div>
                     <div class="separator-v"></div>
                     <q-btn
-                        class="btn-add"
+                        class="btn-add gold-glow"
                         icon="add"
-                        flat
+                        unelevated
                         dense
-                        color="primary"
-                        size="sm"
-                        @click="isOpen = true" />
+                        @click="isOpen = true">
+                        <q-tooltip
+                            class="bg-secondary text-dark text-weight-bold uppercase letter-spacing-1">
+                            Top-up
+                        </q-tooltip>
+                    </q-btn>
                 </div>
             </div>
         </div>
@@ -265,36 +264,40 @@ const getMinLimit = (): number => {
         linear-gradient(180deg, #161616 0%, #0d0d0d 100%);
     border: 0.0625rem solid rgb(255 255 255 / 10%);
     border-radius: 1rem;
-    padding: 2rem;
+    padding: 2.5rem;
 }
 
 .amount-stepper {
     box-shadow: inset 0 0.125rem 0.5rem rgb(0 0 0 / 50%);
     background: rgb(0 0 0 / 30%);
-    padding: 0.125rem 0.75rem;
-    border-radius: 0.5rem;
+    padding: 0.25rem 1rem;
+    border-radius: 0.625rem;
     border: 0.0625rem solid rgb(255 255 255 / 5%);
 }
 
 .confirm-btn {
-    height: 3.25rem;
+    height: 3.5rem;
     font-size: 0.95rem;
     font-weight: 900;
     letter-spacing: 0.09375rem;
-    box-shadow: 0 0.25rem 0.9375rem rgb(0 0 0 / 30%);
-    border-radius: 0.375rem;
+    box-shadow: 0 0.25rem 1.25rem rgb(0 0 0 / 40%);
+    border-radius: 0.5rem;
 }
 
 .cancel-btn {
+    height: 3rem;
     font-weight: 700;
-    border-radius: 0.375rem;
-    text-transform: none;
-    margin-top: 0.5rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+
+    &:hover {
+        background: rgb(255 255 255 / 3%);
+    }
 }
 
 .footer {
     width: 100%;
-    padding-top: 1rem;
+    padding-top: 1.5rem;
     border-top: 0.0625rem solid rgb(255 255 255 / 8%);
 }
 
@@ -308,7 +311,7 @@ const getMinLimit = (): number => {
 .side-box {
     display: flex;
     align-items: center;
-    min-width: 7.5rem;
+    min-width: 10rem;
 }
 
 .pagination-box {
@@ -317,62 +320,61 @@ const getMinLimit = (): number => {
 }
 
 .custom-pagination {
-    gap: 0.5rem;
-    background: rgb(0 0 0 / 20%);
-    padding: 0.125rem 0.5rem;
-    border-radius: 1.875rem;
-    border: 0.0625rem solid rgb(255 255 255 / 5%);
+    gap: 0.75rem;
+    background: rgb(0 0 0 / 25%);
+    padding: 0.375rem 0.875rem;
+    border-radius: 2rem;
+    border: 0.0625rem solid rgb(255 255 255 / 6%);
 }
 
 .page-info {
-    min-width: 3.5rem;
-    font-size: 0.8rem;
+    min-width: 4rem;
+    font-size: 0.9rem;
     letter-spacing: 0.0625rem;
     text-align: center;
-}
-
-.nav-btn {
-    transition: transform 0.2s ease;
-
-    &:active {
-        transform: scale(0.9);
-    }
 }
 
 .balance-panel {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    box-shadow: inset 0 0.125rem 0.25rem rgb(0 0 0 / 30%);
-    background: rgb(0 0 0 / 40%);
-    padding: 0.125rem 0.75rem;
-    border: 0.0625rem solid rgb(255 255 255 / 12%);
-    border-radius: 0.5rem;
+    gap: 1rem;
+    box-shadow: inset 0 0.125rem 0.625rem rgb(0 0 0 / 45%);
+    background: rgb(0 0 0 / 45%);
+    padding: 0.5rem 1.25rem;
+    border: 0.0625rem solid rgb(255 255 255 / 10%);
+    border-radius: 0.75rem;
 }
 
 .balance-wrapper {
     display: flex;
     justify-content: flex-end;
-    min-width: 8rem;
+    min-width: 9.5rem;
 }
 
 .separator-v {
     width: 0.0625rem;
-    height: 1rem;
+    height: 1.5rem;
     background: rgb(255 255 255 / 15%);
-    margin: 0 0.375rem;
 }
 
 .btn-add {
-    font-size: 0.75rem;
+    min-width: 2.125rem;
+    min-height: 2.125rem;
+    border-radius: 0.5rem;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
-.letter-spacing-1 {
-    letter-spacing: 0.0625rem;
-}
+.gold-glow {
+    box-shadow: 0 0 12px rgb(255 215 0 / 40%);
+    background: linear-gradient(135deg, #bf953f, #fcf6ba, #b38728, #fbf5b7, #aa771c) !important;
+    color: #1a1a1a !important;
+    border: 1px solid rgb(255 255 255 / 20%);
 
-.letter-spacing-2 {
-    letter-spacing: 0.125rem;
+    &:hover {
+        transform: scale(1.08);
+        box-shadow: 0 0 18px rgb(255 215 0 / 65%);
+        filter: brightness(1.05);
+    }
 }
 
 :deep(.q-field--filled .q-field__control) {
@@ -384,15 +386,21 @@ const getMinLimit = (): number => {
     }
 }
 
-@media (width <= 37.5rem) {
-    .modal-card {
-        padding: 1.5rem;
+@media (width <= 48rem) {
+    .balance-panel {
+        padding: 0.375rem 1rem;
     }
 
+    .balance-wrapper {
+        min-width: 7.5rem;
+    }
+}
+
+@media (width <= 37.5rem) {
     .inner-grid {
         display: flex;
         flex-direction: column;
-        gap: 1.25rem;
+        gap: 1.5rem;
     }
 
     .side-box {

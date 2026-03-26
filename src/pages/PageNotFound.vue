@@ -54,7 +54,7 @@
 
 @keyframes contentFadeIn {
     from {
-        transform: translateY(10px);
+        transform: translateY(0.625rem);
         opacity: 0;
     }
 

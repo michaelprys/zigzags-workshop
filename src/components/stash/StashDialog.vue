@@ -43,7 +43,8 @@ const validateFunds = (type: PaymentKey | null) => {
     if (!type) return true;
     const amount = paymentData[type];
     const balance = storeBalance.balance[type] ?? 0;
-    if (amount > balance) return `Not enough ${type.replace(/_/g, ' ')}`;
+    if (amount > balance)
+        return `Not enough ${type.replace(/_/g, ' ')}. ZigZag don't do credit! Top up in yer Vault.`;
 
     return true;
 };
@@ -202,6 +203,7 @@ const cancelTrade = () => {
 
 .cancel-btn {
     padding-inline: 1.5rem;
+    border-radius: 0.375rem;
 }
 
 .gap-md {

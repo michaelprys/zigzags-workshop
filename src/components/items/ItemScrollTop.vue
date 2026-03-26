@@ -104,7 +104,7 @@ onBeforeUnmount(() => {
     }
 }
 
-@media (max-width: $breakpoint-xs) {
+@media (width <= $breakpoint-xs) {
     .scroll-top-btn {
         right: 1.5rem;
         bottom: 2rem;

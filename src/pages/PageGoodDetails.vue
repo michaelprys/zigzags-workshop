@@ -87,10 +87,8 @@ onMounted(async () => {
                                     </div>
                                     <q-btn
                                         flat
-                                        round
                                         icon="close"
-                                        color="grey-6"
-                                        class="close-button"
+                                        class="close-button-styled"
                                         @click="router.back()" />
                                 </div>
                                 <p class="text-body1 text-grey-4 line-height-relaxed">
@@ -157,9 +155,9 @@ onMounted(async () => {
 }
 
 .loading-container {
-    flex-grow: 1;
-    width: 100%;
     min-height: calc(100vh - 10rem);
+    width: 100%;
+    flex-grow: 1;
 }
 
 .main-wrapper {
@@ -185,7 +183,7 @@ onMounted(async () => {
     mask-image: radial-gradient(
         ellipse at center,
         #fff 0%,
-        rgba(255, 255, 255, 0.5) 40%,
+        rgb(255 255 255 / 50%) 40%,
         transparent 85%
     );
 }
@@ -193,6 +191,7 @@ onMounted(async () => {
 .bg-workshop {
     background-image: url('src/assets/images/good-details/bg-workshop-details.avif');
 }
+
 .bg-black-market {
     background-image: url('src/assets/images/good-details/bg-black-market-details.avif');
 }
@@ -216,12 +215,12 @@ onMounted(async () => {
     background: transparent !important;
     border-radius: 0.75rem;
     overflow: hidden;
-    border: 0.0625rem solid rgba(255, 255, 255, 0.1);
+    border: 0.0625rem solid rgb(255 255 255 / 10%);
 }
 
 .custom-loader {
     z-index: 1;
-    background: rgba(255, 255, 255, 0.02);
+    background: rgb(255 255 255 / 2%);
 }
 
 .product-img {
@@ -229,6 +228,7 @@ onMounted(async () => {
     height: 100%;
     object-fit: cover;
     transition: transform 0.1s ease;
+
     &.img-hidden {
         opacity: 0;
     }
@@ -243,12 +243,39 @@ onMounted(async () => {
     padding: 3.5rem;
 }
 
-.close-button {
-    min-width: 2.75rem !important;
-    min-height: 2.75rem !important;
-    background: rgb(255 255 255 / 5%);
-    border-radius: 50% !important;
-    border: 0.0625rem solid rgb(255 255 255 / 12%);
+.close-button-styled {
+    min-width: 2.5rem !important;
+    min-height: 2.5rem !important;
+    width: 2.5rem;
+    height: 2.5rem;
+    backdrop-filter: blur(4px);
+    background: rgb(255 255 255 / 3%);
+    color: #888;
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    border-radius: 0.375rem;
+    border: 0.0625rem solid rgb(255 255 255 / 8%);
+
+    &:hover {
+        box-shadow: 0 0 15px rgba($secondary, 0.25);
+        background: rgba($secondary, 0.08);
+        color: $secondary;
+        border-color: rgba($secondary, 0.4);
+    }
+
+    &:active {
+        transform: scale(0.92);
+    }
+
+    :deep(.q-icon) {
+        font-size: 1.25rem;
+        transition: transform 0.4s ease;
+    }
+}
+
+.lore-section {
+    padding: 1.25rem 1.75rem;
+    background: rgb(0 0 0 / 20%);
+    border-left: 0.125rem solid rgba($secondary, 0.5);
 }
 
 .stash-button {
@@ -263,6 +290,7 @@ onMounted(async () => {
 .fade-leave-active {
     transition: opacity 0.3s ease;
 }
+
 .fade-enter-from,
 .fade-leave-to {
     opacity: 0;
@@ -273,6 +301,7 @@ onMounted(async () => {
         max-width: 26.25rem;
         width: 100%;
     }
+
     .content-panel {
         padding: 2.5rem;
     }
@@ -284,6 +313,7 @@ onMounted(async () => {
         gap: 2rem;
         text-align: center;
     }
+
     .stash-button {
         width: 100%;
     }

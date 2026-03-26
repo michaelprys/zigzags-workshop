@@ -16,17 +16,24 @@ const router = useRouter();
 const dialog = ref(false);
 const pending = ref(false);
 
-const isAffordable = computed(() => (storeBalance.balance.gold ?? 0) >= 20000);
+const FEE = 20000;
+const isAffordable = computed(() => (storeBalance.balance.gold ?? 0) >= FEE);
 
 const tradeButtonLabel = computed(() => {
-    if (!storeAuth.session) return 'No vault access for purchase';
-    if (!isAffordable.value) return 'Not enough gold. Top up.';
+    if (!storeAuth.session) return 'No vault access';
+    if (!isAffordable.value) return 'Top up in Vault';
 
     return 'CONFIRM PURCHASE';
 });
 
 const handleTrade = async () => {
-    if (!isAffordable.value) return;
+    if (!storeAuth.session) return;
+    if (!isAffordable.value) {
+        dialog.value = false;
+        await router.push({ name: 'vault' });
+
+        return;
+    }
     pending.value = true;
     try {
         const success = await storeGoods.purchaseInvitation();
@@ -57,7 +64,6 @@ onMounted(async () => {
     const {
         data: { session },
     } = await supabase.auth.getSession();
-
     if (session?.user) {
         await Promise.all([storeBalance.displayBalance(), storeInventory.checkInvitation()]);
     }
@@ -65,34 +71,37 @@ onMounted(async () => {
 </script>
 
 <template>
-    <q-page class="flex flex-center">
+    <q-page class="flex flex-center page-bg">
         <Teleport to="body">
             <q-dialog
                 v-model="dialog"
-                backdrop-filter="blur(1rem) brightness(30%)"
+                backdrop-filter="blur(1.25rem) brightness(30%)"
                 transition-show="scale"
                 transition-hide="scale">
                 <div class="modal-card">
                     <div class="row items-center justify-between no-wrap q-mb-xl header-row">
                         <div class="column">
                             <span
-                                class="text-h5 text-secondary text-weight-bolder uppercase letter-spacing-1 title-text">
+                                class="text-h5 text-secondary text-weight-bolder uppercase letter-spacing-1">
                                 Complete Trade
                             </span>
-                            <span class="text-caption text-grey-6">Authorization for access</span>
+                            <span class="text-caption text-grey-6 uppercase">
+                                Syndicate Authorization
+                            </span>
                         </div>
-                        <div class="balance-badge q-ml-sm">
+                        <div class="balance-badge">
                             <Transition name="fade" mode="out-in">
                                 <div
                                     v-if="storeBalance.balance.gold === null"
                                     key="loading"
                                     class="row no-wrap items-center">
-                                    <q-skeleton type="text" width="2rem" dark class="q-mr-sm" />
-                                    <q-skeleton type="circle" size="1.1rem" dark />
+                                    <q-skeleton type="text" width="2rem" dark />
                                 </div>
                                 <div v-else key="ready" class="row no-wrap items-center">
-                                    <span class="text-weight-bold q-mr-sm text-white">
-                                        {{ storeBalance.balance.gold }}
+                                    <span
+                                        class="text-weight-bold q-mr-sm"
+                                        :class="isAffordable ? 'text-white' : 'text-negative'">
+                                        {{ storeBalance.balance.gold.toLocaleString() }}
                                     </span>
                                     <img
                                         src="~assets/images/vault/gold.avif"
@@ -101,44 +110,45 @@ onMounted(async () => {
                             </Transition>
                         </div>
                     </div>
-                    <div class="column">
-                        <div class="payment-info q-pa-lg q-mb-xl">
-                            <div class="row justify-between items-center no-wrap">
-                                <span
-                                    class="text-grey-5 uppercase text-caption text-weight-bold letter-spacing-1">
-                                    Invitation Fee
-                                </span>
-                                <span class="text-h5 text-secondary text-weight-bolder">
-                                    20,000
-                                    <small class="text-weight-light">G</small>
-                                </span>
-                            </div>
+
+                    <div class="payment-info q-pa-lg q-mb-xl">
+                        <div class="row justify-between items-center no-wrap">
+                            <span
+                                class="text-grey-5 uppercase text-caption text-weight-bold letter-spacing-1">
+                                Invitation Fee
+                            </span>
+                            <span class="text-h5 text-secondary text-weight-bolder">
+                                {{ FEE.toLocaleString() }}
+                                <small class="text-weight-light">G</small>
+                            </span>
                         </div>
-                        <div class="row q-gutter-x-md no-wrap items-center action-row">
-                            <q-btn
-                                v-close-popup
-                                label="Decline"
-                                flat
-                                color="grey-7"
-                                class="action-btn flex-grow cancel-btn" />
-                            <q-btn
-                                :loading="pending"
-                                :disable="!storeAuth.session || !isAffordable"
-                                :label="tradeButtonLabel"
-                                :color="isAffordable ? 'secondary' : 'info'"
-                                text-color="dark"
-                                unelevated
-                                class="action-btn trade-btn flex-grow"
-                                @click="handleTrade">
-                                <template #loading>
-                                    <q-spinner-hourglass />
-                                </template>
-                            </q-btn>
-                        </div>
+                    </div>
+
+                    <div class="row q-gutter-x-md no-wrap items-center action-row">
+                        <q-btn
+                            v-close-popup
+                            label="Decline"
+                            flat
+                            color="grey-7"
+                            class="action-btn cancel-btn" />
+                        <q-btn
+                            :loading="pending"
+                            :disable="!storeAuth.session"
+                            :label="tradeButtonLabel"
+                            :color="isAffordable ? 'secondary' : 'grey-10'"
+                            :text-color="isAffordable ? 'dark' : 'secondary'"
+                            unelevated
+                            class="action-btn trade-btn"
+                            @click="handleTrade">
+                            <template #loading>
+                                <q-spinner-hourglass />
+                            </template>
+                        </q-btn>
                     </div>
                 </div>
             </q-dialog>
         </Teleport>
+
         <section id="black-market-access" class="q-px-md">
             <div class="access-card overflow-hidden">
                 <q-img
@@ -148,52 +158,54 @@ onMounted(async () => {
                     <div class="img-overlay absolute-full"></div>
                 </q-img>
                 <div class="content-section q-pa-xl column flex-center text-center">
-                    <template v-if="!storeInventory.invitation && !storeAuth.session">
-                        <h2
-                            class="text-h4 text-negative text-weight-bolder uppercase letter-spacing-2">
-                            Invitation Required
-                        </h2>
-                        <p class="text-subtitle1 text-grey-5 q-mt-md">
-                            Access your vault to verify your standing with the syndicate.
-                        </p>
-                        <q-btn
-                            class="main-action-btn q-mt-lg"
-                            color="secondary"
-                            text-color="dark"
-                            unelevated
-                            label="Go to Vault"
-                            :to="{ name: 'vault' }" />
-                    </template>
-                    <template v-if="!storeInventory.invitation && storeAuth.session">
-                        <h2
-                            class="text-h4 text-secondary text-weight-bolder uppercase letter-spacing-2">
-                            Black Market Entry
-                        </h2>
-                        <p class="text-subtitle1 text-grey-5 q-mt-md">
-                            Pay the entry fee to unlock restricted treasures.
-                        </p>
-                        <q-btn
-                            class="main-action-btn q-mt-lg"
-                            color="secondary"
-                            text-color="dark"
-                            unelevated
-                            label="Buy Invitation (20k Gold)"
-                            @click="dialog = true" />
-                    </template>
-                    <template v-if="storeInventory.invitation">
-                        <h2
-                            class="text-h4 text-primary text-weight-bolder uppercase letter-spacing-2">
-                            Greetings, Associate
-                        </h2>
-                        <p class="text-subtitle1 text-grey-5 q-mt-md">
-                            Tread carefully. Not everything here is what it seems.
-                        </p>
-                        <div
-                            class="flex flex-center q-mt-lg text-positive text-weight-bold uppercase letter-spacing-1">
-                            <q-spinner-hourglass class="q-mr-sm" size="1.5rem" />
-                            Establishing Connection...
+                    <Transition name="fade" mode="out-in">
+                        <div v-if="!storeInventory.invitation && !storeAuth.session" key="no-auth">
+                            <h2
+                                class="text-h4 text-negative text-weight-bolder uppercase letter-spacing-2">
+                                Invitation Required
+                            </h2>
+                            <p class="text-subtitle1 text-grey-5 q-mt-md">
+                                Access your vault to verify your standing with the syndicate.
+                            </p>
+                            <q-btn
+                                class="main-action-btn q-mt-lg"
+                                color="secondary"
+                                text-color="dark"
+                                unelevated
+                                label="Go to Vault"
+                                :to="{ name: 'vault' }" />
                         </div>
-                    </template>
+                        <div v-else-if="!storeInventory.invitation && storeAuth.session" key="auth">
+                            <h2
+                                class="text-h4 text-secondary text-weight-bolder uppercase letter-spacing-2">
+                                Black Market Entry
+                            </h2>
+                            <p class="text-subtitle1 text-grey-5 q-mt-md">
+                                Pay the entry fee to unlock restricted treasures.
+                            </p>
+                            <q-btn
+                                class="main-action-btn q-mt-lg"
+                                color="secondary"
+                                text-color="dark"
+                                unelevated
+                                label="Buy Invitation (20k Gold)"
+                                @click="dialog = true" />
+                        </div>
+                        <div v-else key="verified">
+                            <h2
+                                class="text-h4 text-primary text-weight-bolder uppercase letter-spacing-2">
+                                Greetings, Associate
+                            </h2>
+                            <p class="text-subtitle1 text-grey-5 q-mt-md">
+                                Tread carefully. Not everything here is what it seems.
+                            </p>
+                            <div
+                                class="flex flex-center q-mt-lg text-positive text-weight-bold uppercase letter-spacing-1">
+                                <q-spinner-hourglass class="q-mr-sm" size="1.5rem" />
+                                Establishing Connection...
+                            </div>
+                        </div>
+                    </Transition>
                 </div>
             </div>
         </section>
@@ -235,22 +247,17 @@ onMounted(async () => {
     width: 100%;
     background:
         radial-gradient(circle at top left, rgb(255 255 255 / 3%) 0%, transparent 40%),
-        linear-gradient(180deg, #161616 0%, #0d0d0d 100%);
-    border: 0.0625rem solid rgb(255 255 255 / 10%);
+        linear-gradient(180deg, #121212 0%, #080808 100%);
+    border: 1px solid rgb(255 255 255 / 10%);
     border-radius: 1rem;
     padding: 3.5rem 2.5rem;
 }
 
 .balance-badge {
-    display: flex;
-    align-items: center;
-    height: 2.5rem;
-    box-shadow: inset 0 0.125rem 0.625rem rgb(0 0 0 / 50%);
-    background: rgb(0 0 0 / 40%);
-    padding: 0 1rem;
-    border-radius: 1.875rem;
-    border: 0.0625rem solid rgb(255 255 255 / 8%);
-    flex-shrink: 0;
+    background: rgb(0 0 0 / 50%);
+    padding: 0.4rem 0.8rem;
+    border-radius: 0.5rem;
+    border: 1px solid rgb(255 255 255 / 8%);
 }
 
 .gold-static-icon {
@@ -259,9 +266,9 @@ onMounted(async () => {
 }
 
 .payment-info {
-    background: rgb(0 0 0 / 20%);
-    border-radius: 0.75rem;
-    border: 0.0625rem solid rgb(255 255 255 / 5%);
+    background: rgb(255 255 255 / 2%);
+    border-radius: 0.5rem;
+    border: 1px solid rgb(255 255 255 / 5%);
 }
 
 .action-btn {
@@ -280,7 +287,7 @@ onMounted(async () => {
 
 .fade-enter-active,
 .fade-leave-active {
-    transition: opacity 0.25s ease;
+    transition: opacity 0.3s ease;
 }
 
 .fade-enter-from,
@@ -299,10 +306,6 @@ onMounted(async () => {
         gap: 1rem;
     }
 
-    .balance-badge {
-        margin-left: 0;
-    }
-
     .action-row {
         flex-direction: column-reverse;
         gap: 1rem;
@@ -310,10 +313,6 @@ onMounted(async () => {
 
     .action-btn {
         width: 100%;
-    }
-
-    .title-text {
-        font-size: 1.35rem;
     }
 }
 </style>
