@@ -7,14 +7,20 @@ import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { ref, watch } from 'vue';
 
+interface UserMetadata {
+    first_name?: string;
+    faction?: string;
+}
+
 const storeAuth = useStoreAuth();
 const storeInventory = useStoreInventory();
 const router = useRouter();
 const $q = useQuasar();
 const userFaction = ref<string>('');
 const userName = ref<string>('');
+
 const syncUserData = () => {
-    const metadata = storeAuth.session?.user_metadata;
+    const metadata = storeAuth.session?.user_metadata as UserMetadata | undefined;
 
     if (!metadata) return;
 
@@ -24,6 +30,7 @@ const syncUserData = () => {
     else if (metadata.faction === 'Alliance') userFaction.value = 'alliance';
     else if (metadata.faction === 'No faction (Outsiders)') userFaction.value = 'outsiders';
 };
+
 const leaveVault = async () => {
     const { error } = await supabaseApi.auth.signOut();
 
@@ -33,11 +40,12 @@ const leaveVault = async () => {
         await storeAuth.checkSession();
         callToastUtils('Safe travels!', true);
         storeInventory.inventoryGoods = [];
-        await router.push({ name: 'access-vault' });
+        void router.push({ name: 'access-vault' });
         userFaction.value = '';
         userName.value = '';
     }
 };
+
 const alertExit = () => {
     $q.dialog({
         title: 'Exit Vault',
@@ -52,8 +60,11 @@ const alertExit = () => {
             class: 'confirm-btn',
         },
         cancel: { label: 'Cancel', flat: true, color: 'grey-7', class: 'cancel-btn' },
-    }).onOk(leaveVault);
+    }).onOk(() => {
+        void leaveVault();
+    });
 };
+
 const imgSrc = (ext: string) => {
     if (!userFaction.value) return '';
 

@@ -15,11 +15,21 @@
         <link rel="preload" as="font" href="src/assets/fonts/magiccardsnormal-webfont.woff2" type="font/woff2" crossorigin>
         <link rel="preload" as="font" href="src/assets/fonts/oblivion-font-webfont.woff2" type="font/woff2" crossorigin>
         <link rel="preload" as="font" href="src/assets/fonts/trajanusbricks-webfont.woff2" type="font/woff2" crossorigin>
-
         <link rel="preload" as="image" href="src/assets/images/common/bg-common.avif" type="image/avif">
+
+        <style>
+          html { background-color: #040405; }
+        </style>
+
+        <script>
+            if (!sessionStorage.getItem('visited')) {
+                document.documentElement.classList.add('first-load');
+                sessionStorage.setItem('visited', 'true');
+            }
+        </script>
     </head>
 
     <body>
-        <!-- quasar:entry-point -->
+    <!-- quasar:entry-point -->
     </body>
 </html>

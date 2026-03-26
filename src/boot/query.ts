@@ -1,6 +1,6 @@
-import { defineBoot } from '#q-app/wrappers';
 import { PiniaColada } from '@pinia/colada';
+import { boot } from 'quasar/wrappers';
 
-export default defineBoot(({ app }) => {
-    app.use(PiniaColada, {});
+export default boot(({ app }) => {
+    app.use(PiniaColada);
 });

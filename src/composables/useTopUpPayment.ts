@@ -20,29 +20,33 @@ export const useTopUpPayment = (
     minAmounts: Record<string, number>,
 ) => {
     const pending = ref(false);
-    const handlePayment = async (topUpForm: QForm) => {
+
+    const handlePayment = async (topUpForm: QForm | null) => {
+        if (!topUpForm) return;
+
         pending.value = true;
         try {
             const valid = await topUpForm.validate();
-
             if (!valid) return;
+
             const selectedType = paymentType.value?.value;
-
             if (!selectedType) return;
+
             const minAmount = minAmounts[selectedType] ?? 0;
-
             if (topUpAmount.value < minAmount) return;
+
             const price = paymentType.value?.price;
-
             if (!price) return;
-            const {
-                data: { session },
-                error: sessionError,
-            } = await supabaseApi.auth.getSession();
 
-            if (sessionError || !session) return;
-            const { data, error: functionError } =
-                await supabaseApi.functions.invoke<CheckoutResponse>('create-checkout-session', {
+            const sessionRes = await supabaseApi.auth.getSession();
+
+            if (sessionRes.error || !sessionRes.data.session) {
+                return;
+            }
+
+            const response = await supabaseApi.functions.invoke<CheckoutResponse>(
+                'create-checkout-session',
+                {
                     body: {
                         sessionData: {
                             price: price,
@@ -50,13 +54,18 @@ export const useTopUpPayment = (
                             paymentType: selectedType,
                         },
                     },
-                });
+                },
+            );
 
-            if (functionError) throw functionError;
+            if (response.error !== null) {
+                throw response.error as Error;
+            }
 
-            if (data?.url) {
-                window.location.href = data.url;
-            } else if (data?.sessionID) {
+            const responseData = response.data;
+
+            if (responseData?.url) {
+                window.location.href = responseData.url;
+            } else if (responseData?.sessionID) {
                 console.warn(
                     'Backend returned sessionID instead of URL. Update Edge Function to return session.url',
                 );

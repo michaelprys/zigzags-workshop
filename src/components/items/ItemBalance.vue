@@ -13,7 +13,11 @@ onMounted(async () => {
     <div class="balance-row">
         <slot />
         <div class="balance-item">
-            <q-skeleton v-if="storeBalance.balance.gold === null" type="text" width="2.1875rem" dark />
+            <q-skeleton
+                v-if="storeBalance.balance.gold === null"
+                type="text"
+                width="2.1875rem"
+                dark />
             <span v-else>{{ storeBalance.balance.gold }}</span>
             <q-img src="~assets/images/vault/gold.avif" width="1.125rem" height="1.125rem" />
             <q-tooltip anchor="bottom right" self="center start" class="bg-primary">
@@ -27,7 +31,10 @@ onMounted(async () => {
                 width="2.1875rem"
                 dark />
             <span v-else>{{ storeBalance.balance.emberheart_rubies }}</span>
-            <q-img src="~assets/images/vault/emberheart-rubies.avif" width="1.5rem" height="1.5rem" />
+            <q-img
+                src="~assets/images/vault/emberheart-rubies.avif"
+                width="1.5rem"
+                height="1.5rem" />
             <q-tooltip anchor="bottom right" self="center start" class="bg-primary">
                 <span class="text-caption text-negative">Emberheart rubies</span>
             </q-tooltip>
@@ -39,7 +46,10 @@ onMounted(async () => {
                 width="2.1875rem"
                 dark />
             <span v-else>{{ storeBalance.balance.gamblers_lootbox }}</span>
-            <q-img src="~assets/images/vault/gamblers-lootbox.avif" width="1.375rem" height="1.375rem" />
+            <q-img
+                src="~assets/images/vault/gamblers-lootbox.avif"
+                width="1.375rem"
+                height="1.375rem" />
             <q-tooltip anchor="bottom right" self="center start" class="bg-primary">
                 <span class="text-caption text-negative">Gambler's lootbox</span>
             </q-tooltip>

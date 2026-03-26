@@ -7,44 +7,56 @@ type PaymentType = {
 };
 
 export const useTopUpState = () => {
+    const env = import.meta.env as unknown as Record<string, string | undefined>;
+
     const paymentTypes: PaymentType[] = [
-        { value: 'gold', label: 'Gold', price: import.meta.env.VITE_PRICE_GOLD },
+        {
+            value: 'gold',
+            label: 'Gold',
+            price: Number(env.VITE_PRICE_GOLD ?? 0),
+        },
         {
             value: 'emberheart_rubies',
             label: 'Emberheart Rubies',
-            price: import.meta.env.VITE_PRICE_EMBERHEART_RUBIES,
+            price: Number(env.VITE_PRICE_EMBERHEART_RUBIES ?? 0),
         },
         {
             value: 'gamblers_lootbox',
             label: "Gambler's Lootbox",
-            price: import.meta.env.VITE_PRICE_GAMBLERS_LOOTBOX,
+            price: Number(env.VITE_PRICE_GAMBLERS_LOOTBOX ?? 0),
         },
     ];
+
     const paymentType = ref<PaymentType | undefined>(paymentTypes[0]);
     const topUpAmount = ref(100);
-    const minAmounts: Record<PaymentType['value'], number> = {
+
+    const minAmounts: Record<string, number> = {
         gold: 100,
         emberheart_rubies: 10,
         gamblers_lootbox: 1,
     };
+
     const decrement = () => {
         const key = paymentType.value?.value ?? 'gold';
         const min = minAmounts[key] ?? 100;
 
         topUpAmount.value = Math.max(topUpAmount.value - min, min);
     };
+
     const increment = () => {
         const key = paymentType.value?.value ?? 'gold';
         const min = minAmounts[key] ?? 100;
 
         topUpAmount.value += min;
     };
+
     const resetAmount = () => {
         const key = paymentType.value?.value ?? 'gold';
         const min = minAmounts[key] ?? 100;
 
         topUpAmount.value = min;
     };
+
     const calculatedAmount = computed(() => {
         let goldEquivalent = topUpAmount.value;
 

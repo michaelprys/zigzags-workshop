@@ -16,14 +16,15 @@ const storeGoods = useStoreGoods();
 const route = useRoute();
 const router = useRouter();
 const { addToStash } = useManageStash();
+
 const syncCategoriesFromUrl = (targetArray: Category[]) => {
     const queryCats = route.query.category;
     const activeCats = Array.isArray(queryCats) ? queryCats : queryCats ? [queryCats] : [];
-
     targetArray.forEach((cat) => {
         cat.active = activeCats.includes(cat.label);
     });
 };
+
 const categories = ref<Category[]>([
     { label: 'consumables', active: false },
     { label: 'trinkets', active: false },
@@ -33,7 +34,23 @@ const categories = ref<Category[]>([
 ]);
 
 syncCategoriesFromUrl(categories.value);
+
 const { currentPage, queryData, isPending, loadPaginatedGoods } = usePaginatedGoods(true);
+
+const isDelayedPending = ref(false);
+let pendingTimeout: ReturnType<typeof setTimeout> | null = null;
+
+watch(isPending, (val) => {
+    if (val) {
+        pendingTimeout = setTimeout(() => {
+            isDelayedPending.value = true;
+        }, 300);
+    } else {
+        if (pendingTimeout) clearTimeout(pendingTimeout);
+        isDelayedPending.value = false;
+    }
+});
+
 const { updateSelectedCategories, resetCategories } = useFilters(
     categories,
     loadPaginatedGoods,
@@ -41,10 +58,12 @@ const { updateSelectedCategories, resetCategories } = useFilters(
     router,
     currentPage,
 );
+
 const hasInitialLoaded = ref(false);
 const showEmptyState = computed(
     () => !isPending.value && hasInitialLoaded.value && queryData.value?.length === 0,
 );
+
 const imgLoaded = ref<Record<string, boolean>>({});
 
 watch(
@@ -52,28 +71,32 @@ watch(
     (newGoods) => {
         if (!newGoods) return;
         newGoods.forEach((good) => {
+            if (!good?.image_url) return;
             const img = new Image();
-
-            img.onload = async () => {
-                if (img.complete) {
-                    imgLoaded.value[good?.id] = true;
-                } else {
-                    await delayUtils(200);
-                    imgLoaded.value[good?.id] = true;
-                }
+            img.onload = () => {
+                void (async () => {
+                    if (img.complete) {
+                        imgLoaded.value[good.id] = true;
+                    } else {
+                        await delayUtils(200);
+                        imgLoaded.value[good.id] = true;
+                    }
+                })();
             };
-            img.src = good?.image_url;
+            img.src = good.image_url;
         });
     },
     { immediate: true, deep: true },
 );
+
 watch(
     () => route.query.category,
     () => {
         syncCategoriesFromUrl(categories.value);
-        loadPaginatedGoods();
+        void loadPaginatedGoods();
     },
 );
+
 onMounted(async () => {
     await loadPaginatedGoods();
     hasInitialLoaded.value = true;
@@ -85,14 +108,16 @@ onMounted(async () => {
         <div class="overlay"></div>
         <section id="black-market">
             <h1 class="text-center text-h3 title q-mt-md q-mb-lg">Hunt treasures</h1>
+
             <ItemCategories
                 :categories="categories"
                 :update-selected-categories="updateSelectedCategories"
                 :reset-categories="resetCategories" />
+
             <div class="column flex-center q-px-md relative-position col-grow">
-                <template v-if="isPending || (queryData && queryData.length > 0)">
+                <template v-if="isDelayedPending || (queryData && queryData.length > 0)">
                     <ul class="flex flex-center q-gutter-lg q-mt-lg q-pl-none goods-list">
-                        <template v-if="isPending">
+                        <template v-if="isDelayedPending">
                             <li v-for="n in 8" :key="n" class="card">
                                 <q-card flat class="fit column no-wrap bg-transparent">
                                     <div class="image-wrapper">
@@ -121,6 +146,7 @@ onMounted(async () => {
                                 </q-card>
                             </li>
                         </template>
+
                         <template v-else>
                             <li
                                 v-for="good in queryData"
@@ -135,8 +161,12 @@ onMounted(async () => {
                                                 square
                                                 class="skeleton-img skeleton-custom" />
                                         </Transition>
-                                        <q-img class="image" :src="good.image_url" />
+                                        <q-img
+                                            class="image"
+                                            :src="good.image_url ?? ''"
+                                            transition="fade" />
                                     </div>
+
                                     <q-card-section>
                                         <div
                                             class="relative-position items-center no-wrap row height-title">
@@ -150,6 +180,7 @@ onMounted(async () => {
                                             </div>
                                         </div>
                                     </q-card-section>
+
                                     <q-card-section class="q-pt-none">
                                         <div
                                             class="flex items-center no-wrap row relative-position height-content">
@@ -186,6 +217,7 @@ onMounted(async () => {
                                             </div>
                                         </div>
                                     </q-card-section>
+
                                     <q-card-actions
                                         class="flex justify-between q-mt-auto q-px-md q-pb-md">
                                         <q-btn flat color="primary" @click.stop="addToStash(good)">
@@ -195,8 +227,8 @@ onMounted(async () => {
                                             :to="{
                                                 name: 'good-details',
                                                 params: {
-                                                    category: good?.category,
-                                                    slug: good?.slug,
+                                                    category: good.category,
+                                                    slug: good.slug,
                                                 },
                                             }"
                                             class="no-decoration">
@@ -207,6 +239,7 @@ onMounted(async () => {
                             </li>
                         </template>
                     </ul>
+
                     <div
                         v-if="!isPending && storeGoods.totalPages > 0"
                         class="pagination-wrapper q-py-xl">
@@ -222,7 +255,7 @@ onMounted(async () => {
                                 class="nav-arrow"
                                 @click="
                                     currentPage--;
-                                    loadPaginatedGoods();
+                                    void loadPaginatedGoods();
                                 " />
                             <q-pagination
                                 v-model="currentPage"
@@ -232,7 +265,7 @@ onMounted(async () => {
                                 size="md"
                                 :max="storeGoods.totalPages"
                                 flat
-                                @update:model-value="loadPaginatedGoods" />
+                                @update:model-value="void loadPaginatedGoods()" />
                             <q-btn
                                 icon="chevron_right"
                                 flat
@@ -242,11 +275,12 @@ onMounted(async () => {
                                 class="nav-arrow"
                                 @click="
                                     currentPage++;
-                                    loadPaginatedGoods();
+                                    void loadPaginatedGoods();
                                 " />
                         </div>
                     </div>
                 </template>
+
                 <div
                     v-else-if="showEmptyState"
                     class="empty-state-wrapper column flex-center q-pa-md">
@@ -435,17 +469,17 @@ onMounted(async () => {
     inset: 0;
     z-index: -1;
     opacity: 0.5;
-}
 
-.overlay::before {
-    position: absolute;
-    transform: translateX(-50%);
-    z-index: -1;
-    min-height: 100vh;
-    width: 100%;
-    background: radial-gradient(ellipse at center, rgb(10 10 60 / 60%) 0%, transparent 80%);
-    content: '';
-    top: 0;
-    left: 50%;
+    &::before {
+        position: absolute;
+        transform: translateX(-50%);
+        z-index: -1;
+        min-height: 100vh;
+        width: 100%;
+        background: radial-gradient(ellipse at center, rgb(10 10 60 / 60%) 0%, transparent 80%);
+        content: '';
+        top: 0;
+        left: 50%;
+    }
 }
 </style>

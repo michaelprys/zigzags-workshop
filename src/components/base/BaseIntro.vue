@@ -1,69 +1,30 @@
 <script setup lang="ts">
-import { useStoreGoods } from 'stores/goods.store';
-import { useStoreAuth } from 'stores/auth.store';
-import type { Good } from 'stores/goods.store';
-import { useQuery } from '@pinia/colada';
-import { useRouter } from 'vue-router';
-import { computed, ref } from 'vue';
+import { ref, watch } from 'vue';
 
-const storeAuth = useStoreAuth();
-const storeGoods = useStoreGoods();
-const router = useRouter();
-const model = ref(null);
-const suggestions = ref<Suggestion[]>([]);
+const props = defineProps<{
+    modelValue: string;
+    suggestions: { label: string; value: string }[];
+    filterFn: (val: string, doneFn: (callbackFn: () => void) => void, abortFn: () => void) => void;
+    goToLink: (val: string) => void;
+}>();
+
+const emit = defineEmits<{
+    (e: 'update:modelValue', value: string): void;
+}>();
+
+const localModel = ref(props.modelValue);
 const searchVal = ref('');
 
-type Suggestion = {
-    label: string;
-    value: string;
-    link: string;
-};
+watch(
+    () => props.modelValue,
+    (newVal) => {
+        localModel.value = newVal;
+    },
+);
 
-const { data: queryData } = useQuery({
-    key: () =>
-        storeAuth.session?.user?.id ? ['suggestions', storeAuth.session.user.id] : ['suggestions'],
-    query: () => storeGoods.loadSuggestedGoods(),
-    staleTime: 1000 * 60 * 5,
+watch(localModel, (val) => {
+    emit('update:modelValue', val);
 });
-const formattedSuggestions = computed(() => {
-    return (
-        queryData?.value?.map((good: Good) => ({
-            label: good.name,
-            value: good.slug,
-            link: `/goods/${good.category}/${good.slug}`,
-        })) || []
-    );
-});
-const filterFn = (val: string, update: (fn: () => void) => void) => {
-    searchVal.value = val;
-
-    if (val.length < 2) {
-        update(() => {
-            suggestions.value = [];
-        });
-
-        return;
-    }
-    update(() => {
-        const needle = val.toLowerCase();
-
-        suggestions.value = formattedSuggestions.value.filter((v: Suggestion) =>
-            v.label.toLowerCase().includes(needle),
-        );
-    });
-};
-const goToLink = async (option: Suggestion | string | null) => {
-    if (!option || typeof option === 'string') return;
-    const foundSuggestion = queryData?.value?.find(
-        (suggestion: Good) => suggestion.slug === option.value,
-    );
-
-    if (foundSuggestion) {
-        storeGoods.selectGood(foundSuggestion);
-        await router.push(option.link);
-        model.value = null;
-    }
-};
 </script>
 
 <template>
@@ -71,8 +32,8 @@ const goToLink = async (option: Suggestion | string | null) => {
         <h1 class="sr-only">Introduction</h1>
         <div class="flex flex-center q-px-md">
             <div class="relative-position shadow-8 text-center wrapper">
-                <div class="column fit flex-center">
-                    <div class="q-px-lg" style="z-index: 1">
+                <div class="column fit flex-center content-box">
+                    <div class="q-px-lg" style="z-index: 10">
                         <h2 class="title text-glow-dark text-h3 text-primary">
                             Time is money, friend!
                         </h2>
@@ -80,8 +41,8 @@ const goToLink = async (option: Suggestion | string | null) => {
                             I got the best deals anywhere
                         </h3>
                         <q-select
-                            v-model="model"
-                            :options="suggestions"
+                            v-model="localModel"
+                            :options="props.suggestions"
                             class="select q-mt-lg"
                             label-color="info"
                             color="secondary"
@@ -90,54 +51,46 @@ const goToLink = async (option: Suggestion | string | null) => {
                             use-input
                             hide-selected
                             fill-input
-                            input-debounce="300"
+                            input-debounce="500"
                             style="width: 100%"
-                            @filter="filterFn"
-                            @update:model-value="goToLink">
+                            @filter="props.filterFn"
+                            @update:model-value="props.goToLink"
+                            @filter-input="(val: string) => (searchVal = val)">
                             <template #option="scope">
                                 <q-item clickable v-bind="scope.itemProps">
                                     <q-item-section class="text-primary text-left">
-                                        <q-item-label>
-                                            {{ scope.opt.label }}
-                                        </q-item-label>
+                                        <q-item-label>{{ scope.opt.label }}</q-item-label>
                                     </q-item-section>
                                 </q-item>
                             </template>
                             <template #no-option>
                                 <q-item v-if="searchVal.length >= 2">
-                                    <q-item-section class="text-primary text-left">
-                                        No results for "{{ searchVal }}"
+                                    <q-item-section class="text-grey text-left">
+                                        No treasures found
                                     </q-item-section>
                                 </q-item>
                             </template>
                         </q-select>
-                        <div class="q-pa-md">
-                            <div class="q-gutter-md row"></div>
-                        </div>
                     </div>
                 </div>
                 <div class="parallax-wrapper absolute-top fit">
-                    <q-parallax class="parallax fit">
+                    <q-parallax class="parallax" :speed="0.5">
                         <template #media>
                             <video
                                 class="video"
-                                width="1516"
-                                height="926"
                                 poster="~assets/images/base/poster.avif"
                                 loop
                                 muted
-                                autoplay>
+                                autoplay
+                                playsinline>
                                 <source src="~assets/images/base/intro.mp4" type="video/mp4" />
                             </video>
-                            <div class="layer"></div>
                         </template>
                     </q-parallax>
-                    <div class="poster"></div>
                 </div>
             </div>
         </div>
     </section>
-    <div class="separator"></div>
 </template>
 
 <style lang="scss" scoped>
@@ -153,19 +106,35 @@ const goToLink = async (option: Suggestion | string | null) => {
     max-width: 92.5rem;
     width: 100%;
     height: 40rem;
-}
-
-.parallax-wrapper {
-    border-radius: $rounded;
-}
-
-.poster {
-    display: none;
-    width: 100%;
-    height: 100%;
     background-image: url('/src/assets/images/base/poster.avif');
     background-position: center;
     background-size: cover;
+    background-color: #0b0504;
+    border-radius: $rounded;
+    overflow: hidden;
+}
+
+.content-box {
+    position: relative;
+    z-index: 10;
+}
+
+.parallax-wrapper {
+    z-index: 1;
+    pointer-events: none;
+}
+
+.parallax {
+    height: 100% !important;
+}
+
+.video {
+    display: block;
+    min-width: 100%;
+    min-height: 100%;
+    width: auto;
+    height: auto;
+    object-fit: cover;
 }
 
 @media (width <= $breakpoint-sm) {
@@ -177,19 +146,11 @@ const goToLink = async (option: Suggestion | string | null) => {
         font-size: map.get($body1, 'size');
         margin-top: 0.5rem;
     }
-
-    :deep(.q-field__label) {
-        font-size: map.get($body2, 'size');
-    }
 }
 
 @media (width <= 69.4375rem) {
-    .parallax {
+    .parallax-wrapper {
         display: none;
-    }
-
-    .poster {
-        display: block;
     }
 }
 </style>

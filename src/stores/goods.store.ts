@@ -11,9 +11,13 @@ export interface Good {
     slug: string;
     image_url: string | null;
     requires_access: boolean;
-    category: string;
-    description?: string;
-    price?: number;
+    category: string | null;
+    description: string | null;
+    short_description: string | null;
+    price: number;
+    debuff: string | null;
+    source: string | null;
+    quantity?: number;
 }
 
 export interface UserGood {
@@ -91,19 +95,30 @@ export const useStoreGoods = defineStore(
             }
         };
 
+        const loadSuggestedGoods = async (): Promise<Good[]> => {
+            try {
+                const { data, error } = await supabase.from('goods').select('*');
+                if (error) throw error;
+
+                return (data as Good[]) || [];
+            } catch (err) {
+                console.error('Failed to load suggested goods:', err);
+
+                return [];
+            }
+        };
+
         const purchaseInvitation = async (): Promise<boolean> => {
             pending.value = true;
             try {
                 const storeBalance = useStoreBalance();
                 const storeInventory = useStoreInventory();
+                const authRes = await supabase.auth.getUser();
+                const user = authRes.data.user;
 
-                const {
-                    data: { user },
-                } = await supabase.auth.getUser();
                 if (!user) return false;
 
                 const userId = user.id;
-
                 const { data: invGood, error: fetchErr } = await supabase
                     .from('goods')
                     .select('*')
@@ -115,7 +130,7 @@ export const useStoreGoods = defineStore(
                 const price = 20000;
                 await storeBalance.updateBalance('gold', price);
 
-                const { count } = await supabase
+                const countRes = await supabase
                     .from('user_goods')
                     .select('*', { count: 'exact', head: true })
                     .eq('user_id', userId);
@@ -125,16 +140,15 @@ export const useStoreGoods = defineStore(
                     good_id: invGood.id,
                     quantity: 1,
                     status: 'purchased',
-                    slot: (count || 0) + 1,
+                    slot: (countRes.count || 0) + 1,
                 };
 
                 const { error: insErr } = await supabase.from('user_goods').insert(payload);
-
                 if (insErr) throw insErr;
 
                 await storeInventory.checkInvitation();
                 await storeInventory.loadInventoryGoods(1, 55);
-                await router.push({ name: 'black-market' });
+                void router.push({ name: 'black-market' });
 
                 return true;
             } catch (err) {
@@ -156,6 +170,7 @@ export const useStoreGoods = defineStore(
             totalPages,
             loadGoods,
             loadFeaturedGoods,
+            loadSuggestedGoods,
             purchaseInvitation,
             selectGood: (good: Good | null) => {
                 selectedGood.value = good;

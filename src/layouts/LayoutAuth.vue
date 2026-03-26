@@ -31,11 +31,7 @@
         content: '';
         position: absolute;
         inset: 0;
-        background: radial-gradient(
-            circle at top left,
-            rgb(255 255 255 / 4%) 0%,
-            transparent 70%
-        );
+        background: radial-gradient(circle at top left, rgb(255 255 255 / 4%) 0%, transparent 70%);
         pointer-events: none;
     }
 }

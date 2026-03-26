@@ -10,6 +10,9 @@ import vueParser from 'vue-eslint-parser';
 
 export default tseslint
     .config(
+        {
+            ignores: ['node_modules', '.quasar', 'dist', 'src-capacitor', 'src-cordova'],
+        },
         ...pluginQuasar.configs.recommended(),
         js.configs.recommended,
         ...tseslint.configs.recommendedTypeChecked,
@@ -18,12 +21,6 @@ export default tseslint
         perfectionist.configs['recommended-flat'],
         {
             files: ['**/*.ts', '**/*.vue'],
-            plugins: {
-                perfectionist,
-                '@stylistic': stylistic,
-                vue: pluginVue,
-                '@typescript-eslint': tseslint.plugin,
-            },
             languageOptions: {
                 parser: vueParser,
                 parserOptions: {
@@ -38,9 +35,24 @@ export default tseslint
                     process: 'readonly',
                 },
             },
+            plugins: {
+                '@stylistic': stylistic,
+                perfectionist,
+                vue: pluginVue,
+                '@typescript-eslint': tseslint.plugin,
+            },
             rules: {
                 'no-debugger': process.env.NODE_ENV === 'production' ? 'error' : 'off',
                 '@typescript-eslint/consistent-type-imports': ['error', { prefer: 'type-imports' }],
+                '@typescript-eslint/no-unused-vars': [
+                    'error',
+                    {
+                        vars: 'all',
+                        args: 'after-used',
+                        ignoreRestSiblings: true,
+                        argsIgnorePattern: '^_',
+                    },
+                ],
                 'perfectionist/sort-imports': [
                     'error',
                     {
@@ -70,7 +82,6 @@ export default tseslint
                         next: ['interface', 'type', 'function', 'export', 'return'],
                     },
                     { blankLine: 'always', prev: ['interface', 'type'], next: '*' },
-                    { blankLine: 'always', prev: 'import', next: '*' },
                     { blankLine: 'any', prev: 'import', next: 'import' },
                 ],
                 '@stylistic/type-annotation-spacing': ['error', { after: true }],
@@ -79,4 +90,4 @@ export default tseslint
         },
         prettierSkipFormatting,
     )
-    .filter(Boolean);
+    .filter((config) => config !== undefined && config !== null);

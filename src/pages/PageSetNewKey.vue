@@ -80,7 +80,7 @@ const setNewKey = async () => {
                     text-color="dark"
                     unelevated
                     class="text-weight-bold q-px-xl"
-                    style=" width: 12rem;height: 2.75rem">
+                    style="width: 12rem; height: 2.75rem">
                     <template #loading>
                         <q-spinner-hourglass class="on-left" />
                         Ordering...

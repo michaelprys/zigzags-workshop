@@ -14,7 +14,7 @@ const storeGoods = useStoreGoods();
 const activeSlide = ref(1);
 const { data: queryData } = useQuery<Good[] | undefined>({
     key: ['featuredGoods'],
-    query: () => storeGoods.loadFeaturedGoods(),
+    query: async () => storeGoods.loadFeaturedGoods() as Promise<Good[]>,
     staleTime: 1000 * 60 * 5,
 });
 const slideGroup = computed(() => {

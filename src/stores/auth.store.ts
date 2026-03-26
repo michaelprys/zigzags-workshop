@@ -1,20 +1,11 @@
 import { acceptHMRUpdate, defineStore } from 'pinia';
+import type { User } from '@supabase/supabase-js';
 import supabaseApi from 'src/api/supabase.api';
 import { ref } from 'vue';
 
-type User = {
-    id: string;
-    first_name: string;
-    email: string;
-    user_metadata?: string;
-};
-
-type AuthSession = {
-    user: User | null;
-};
-
 export const useStoreAuth = defineStore('auth', () => {
-    const session = ref<AuthSession | null>(null);
+    const session = ref<User | null>(null);
+
     const checkSession = async () => {
         const { data, error } = await supabaseApi.auth.getSession();
 
@@ -23,7 +14,8 @@ export const useStoreAuth = defineStore('auth', () => {
 
             return;
         }
-        session.value = data.session?.user || null;
+
+        session.value = data.session?.user ?? null;
     };
 
     return {
@@ -32,6 +24,11 @@ export const useStoreAuth = defineStore('auth', () => {
     };
 });
 
-if (import.meta.hot) {
-    import.meta.hot.accept(acceptHMRUpdate(useStoreAuth, import.meta.hot));
+interface ImportMetaHot {
+    accept: (cb: unknown) => void;
+}
+
+const hot = (import.meta as unknown as { hot?: ImportMetaHot }).hot;
+if (hot) {
+    hot.accept(acceptHMRUpdate(useStoreAuth, hot));
 }

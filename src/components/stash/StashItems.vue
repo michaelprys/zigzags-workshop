@@ -10,7 +10,10 @@ const { basePrice, goblinTax, removeFromStash, increaseGoodQuantity, decreaseGoo
 const storeAuth = useStoreAuth();
 const storeGoods = useStoreGoods();
 const vaultAccessed = ref(false);
-const emit = defineEmits(['openDialog']);
+
+const emit = defineEmits<{
+    (e: 'openDialog'): void;
+}>();
 
 onMounted(async () => {
     if (!storeAuth.session) {
@@ -18,6 +21,7 @@ onMounted(async () => {
     }
     vaultAccessed.value = !!storeAuth.session;
 });
+
 const tweened = reactive({
     tweenedBasePrice: basePrice.value,
     tweenedGoblinTax: goblinTax.value,
@@ -48,7 +52,7 @@ watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
                             v-for="(good, goodIdx) in storeGoods.stashGoods"
                             :key="good.id"
                             class="card">
-                            <q-img class="img shadow-24" :src="good.image_url" ratio="1" />
+                            <q-img class="img shadow-24" :src="good.image_url ?? ''" ratio="1" />
                             <div class="inner q-ml-lg">
                                 <div class="info column justify-center">
                                     <span class="text-h6 text-primary q-mb-xs text-weight-bold">
@@ -104,6 +108,7 @@ watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
                         </li>
                     </ul>
                 </div>
+
                 <div class="column panel panel-price">
                     <div class="panel-price-inner q-pa-xl">
                         <div class="price-row">
@@ -187,14 +192,14 @@ watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
     padding: 1.25rem 1.75rem;
     border-bottom: 0.0625rem solid rgb(255 255 255 / 5%);
     transition: background 0.3s ease;
+}
 
-    &:hover {
-        background: rgb(255 255 255 / 1.5%);
-    }
+.card:hover {
+    background: rgb(255 255 255 / 1.5%);
+}
 
-    &:last-child {
-        border-bottom: none;
-    }
+.card:last-child {
+    border-bottom: none;
 }
 
 .img {
@@ -222,18 +227,18 @@ watch([basePrice, goblinTax], ([newBasePrice, newGoblinTax]) => {
     display: flex;
     justify-content: space-between;
     align-items: center;
+}
 
-    .label {
-        font-size: 0.8rem;
-        letter-spacing: 0.0625rem;
-        color: #888;
-        text-transform: uppercase;
-    }
+.price-row .label {
+    font-size: 0.8rem;
+    letter-spacing: 0.0625rem;
+    color: #888;
+    text-transform: uppercase;
+}
 
-    .value {
-        font-size: 1.1rem;
-        color: #eee;
-    }
+.price-row .value {
+    font-size: 1.1rem;
+    color: #eee;
 }
 
 .price-glow {

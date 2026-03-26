@@ -8,29 +8,32 @@ import { ref, watch } from 'vue';
 const { transitionName, applyTransition } = useTransition();
 const storeGoods = useStoreGoods();
 const { addToStash } = useManageStash();
+
 const props = defineProps<{
     classCard: string;
-    queryData: Good[];
+    queryData: Good[] | undefined;
     isPending: boolean;
 }>();
-const imgLoaded = ref<Record<number, boolean>>({});
+
+const imgLoaded = ref<Record<string | number, boolean>>({});
 
 watch(
     () => props.queryData,
     (newGoods) => {
         if (!newGoods) return;
-        newGoods.forEach((good) => {
+        newGoods.forEach((good: Good) => {
             const img = new Image();
-
-            img.onload = async () => {
-                if (!props.isPending) {
-                    imgLoaded.value[good?.id] = true;
-                } else {
-                    await delayUtils(200);
-                    imgLoaded.value[good?.id] = true;
-                }
+            img.onload = () => {
+                void (async () => {
+                    if (!props.isPending) {
+                        imgLoaded.value[good.id] = true;
+                    } else {
+                        await delayUtils(200);
+                        imgLoaded.value[good.id] = true;
+                    }
+                })();
             };
-            img.src = good?.image_url;
+            img.src = good.image_url ?? '';
         });
     },
     { immediate: true, deep: true },
@@ -57,7 +60,7 @@ watch(
                                     square
                                     class="skeleton-img" />
                             </Transition>
-                            <q-img class="image" :src="good.image_url" />
+                            <q-img class="image" :src="good.image_url ?? ''" />
                         </div>
                         <q-card-section>
                             <div class="relative items-center no-wrap row">
@@ -134,8 +137,8 @@ watch(
                                     :to="{
                                         name: 'good-details',
                                         params: {
-                                            category: good?.category,
-                                            slug: good?.slug,
+                                            category: good.category,
+                                            slug: good.slug,
                                         },
                                     }"
                                     @click="storeGoods.selectGood(good)">
@@ -152,43 +155,3 @@ watch(
         </div>
     </div>
 </template>
-
-<style lang="scss" scoped>
-.skeleton-img {
-    height: 13.125rem;
-    border-top-left-radius: $rounded;
-    border-top-right-radius: $rounded;
-}
-
-.skeleton-add {
-    position: absolute;
-    width: 9.3448rem;
-    background-color: $placeholder-primary;
-    margin-inline: 0.5rem;
-}
-
-.skeleton-details {
-    position: absolute;
-    width: 4.6019rem;
-    background-color: $placeholder-primary;
-    margin-right: 0.5rem;
-}
-
-.card {
-    &:hover .image {
-        transform: scale(1.05);
-    }
-}
-
-.image-wrapper {
-    border-top-left-radius: $rounded;
-    border-top-right-radius: $rounded;
-    overflow: hidden;
-}
-
-.image {
-    transform: scale(1);
-    height: 13.125rem;
-    transition: transform 0.15s linear;
-}
-</style>

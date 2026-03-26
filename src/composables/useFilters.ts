@@ -12,8 +12,9 @@ export const useFilters = (
     currentPage: Ref<number>,
 ) => {
     const storeGoods = useStoreGoods();
+
     const updateSelectedCategories = async () => {
-        let selected = categories.value.filter((cat) => cat.active).map((cat) => cat.label);
+        const selected = categories.value.filter((cat) => cat.active).map((cat) => cat.label);
 
         if (route.name === 'workshop') {
             storeGoods.selectedWorkshopCategories = selected;
@@ -23,7 +24,6 @@ export const useFilters = (
 
         if (selected.length === 0) {
             await router.push({ query: { page: 1 } });
-            selected = [];
         } else {
             await router.push({
                 query: {
@@ -34,6 +34,7 @@ export const useFilters = (
         }
         await loadPaginatedGoods();
     };
+
     const resetCategories = async () => {
         categories.value.forEach((cat) => (cat.active = false));
         await router.replace({ query: { page: 1 } });
@@ -63,6 +64,7 @@ export const useFilters = (
             await loadPaginatedGoods();
         },
     );
+
     watchEffect(() => {
         categories.value.forEach((cat) => {
             if (route.name === 'workshop') {

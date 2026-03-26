@@ -45,19 +45,20 @@ const handleRemoveItem = (selectedGoodId: number) => {
             color: 'grey-7',
             class: 'cancel-btn',
         },
-    }).onOk(async () => {
-        try {
-            await removeGoodFromInventory(selectedGoodId);
-            await loadPaginatedInventoryGoods();
-        } catch (err) {
-            console.error(err);
-        }
+    }).onOk(() => {
+        void (async () => {
+            try {
+                await removeGoodFromInventory(selectedGoodId);
+                await loadPaginatedInventoryGoods();
+            } catch (err) {
+                console.error(err);
+            }
+        })();
     });
 };
 
 const handleSlots = async (event: DraggableEvent) => {
     const item = inventoryGoods.value[event.newIndex];
-
     if (item) {
         await updateGoodSlot(item.good_id, event.newIndex + 1);
         await loadPaginatedInventoryGoods();
@@ -71,15 +72,19 @@ const handleSlots = async (event: DraggableEvent) => {
             inventoryGoods,
             {
                 animation: 150,
-                onUpdate: handleSlots,
+                onUpdate: (event: DraggableEvent) => {
+                    void handleSlots(event);
+                },
             },
         ]"
         class="q-mt-lg slots">
         <template v-for="(slot, idx) in inventoryGoodsPerPage" :key="idx">
             <li class="slot">
                 <div class="placeholder"></div>
-                <Transition name="remove">
-                    <div v-if="inventoryGoods[idx] && inventoryGoods[idx].goods">
+                <Transition name="remove" appear>
+                    <div
+                        v-if="inventoryGoods[idx] && inventoryGoods[idx].goods"
+                        class="full-height full-width relative-position">
                         <q-tooltip
                             :delay="500"
                             anchor="bottom right"
@@ -104,7 +109,18 @@ const handleSlots = async (event: DraggableEvent) => {
                         <q-img
                             class="img"
                             :src="inventoryGoods[idx].goods.image_url"
-                            style="width: 100%; height: 100%" />
+                            transition="fade"
+                            :duration="1000"
+                            style="width: 100%; height: 100%">
+                            <template #loading>
+                                <q-skeleton
+                                    type="rect"
+                                    dark
+                                    animated
+                                    class="full-height full-width"
+                                    style="background: rgb(255 255 255 / 8%)" />
+                            </template>
+                        </q-img>
                     </div>
                 </Transition>
             </li>
@@ -173,15 +189,12 @@ const handleSlots = async (event: DraggableEvent) => {
     @media (width <= 75rem) {
         grid-template-columns: repeat(8, 5.25rem);
     }
-
     @media (width <= 61.25rem) {
         grid-template-columns: repeat(6, 5.25rem);
     }
-
     @media (width <= $breakpoint-sm) {
         grid-template-columns: repeat(5, 5.25rem);
     }
-
     @media (width <= $breakpoint-xs) {
         grid-template-columns: repeat(3, 5.25rem);
     }
@@ -196,8 +209,8 @@ const handleSlots = async (event: DraggableEvent) => {
     height: 5.25rem;
     box-shadow: 0 0.25rem 0.625rem rgb(0 0 0 / 70%);
     cursor: pointer;
-    padding: 0.25em;
-    border-radius: 0.25rem;
+    padding: 0.15rem;
+    border-radius: 0.375rem;
     overflow: hidden;
 
     &:hover {
@@ -209,7 +222,7 @@ const handleSlots = async (event: DraggableEvent) => {
     position: absolute;
     top: 0;
     right: 0;
-    z-index: 3;
+    z-index: 5;
     background-color: rgb(23 23 23);
 }
 
@@ -218,17 +231,17 @@ const handleSlots = async (event: DraggableEvent) => {
     justify-content: center;
     align-items: center;
     position: absolute;
-    z-index: 1;
+    z-index: 4;
     height: 1.0625rem;
     font-size: 0.75rem;
     color: $primary;
     background-color: $dark;
     user-select: none;
-    bottom: 0.1875rem;
-    right: 0.1875rem;
+    bottom: 0.25rem;
+    right: 0.25rem;
     padding-inline: 0.25em;
-    border-radius: 0.25rem;
-    border: 0.125rem solid rgb(255 255 255 / 10%);
+    border-radius: 0.15rem;
+    border: 0.0625rem solid rgb(255 255 255 / 10%);
 }
 
 .placeholder {
@@ -241,33 +254,33 @@ const handleSlots = async (event: DraggableEvent) => {
         border-color 0.15s,
         box-shadow 0.15s;
     border-radius: 0.375rem;
-    border: 0.125rem solid rgb(255 255 255 / 5%);
+    border: 0.0625rem solid rgb(255 255 255 / 5%);
 
     &::before {
         content: '';
         position: absolute;
         inset: 0;
         background: radial-gradient(circle at top left, rgb(255 255 255 / 20%), transparent);
-        border-radius: 0.18rem;
+        border-radius: 0.375rem;
     }
 }
 
 .img {
     position: absolute;
-    transform: translateX(-50%) translateY(-50%);
+    z-index: 2;
     width: 100%;
     height: 100%;
     filter: contrast(95%) brightness(95%);
     user-select: none;
-    top: 50%;
-    left: 50%;
-    border-radius: $rounded;
+    top: 0;
+    left: 0;
+    border-radius: 0.375rem;
 
     &::before {
         content: '';
         position: absolute;
         inset: 0;
-        border-radius: $rounded;
+        border-radius: 0.375rem;
         z-index: 3;
     }
 }

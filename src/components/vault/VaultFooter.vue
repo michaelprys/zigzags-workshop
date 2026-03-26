@@ -6,8 +6,8 @@ import { useTopUpState } from 'src/composables/useTopUpState';
 import { useStoreInventory } from 'stores/inventory.store';
 import type { PaymentType } from 'stores/balance.store';
 import { useStoreBalance } from 'stores/balance.store';
-import { onMounted, ref, watchEffect } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
+import { onMounted, ref, watch } from 'vue';
 import type { QForm } from 'quasar';
 
 const topUpForm = ref<QForm | null>(null);
@@ -28,42 +28,59 @@ const {
     calculatedAmount,
 } = useTopUpState();
 const { pending, handlePayment } = useTopUpPayment(paymentType, topUpAmount, minAmounts);
+
 const preventIncorrectChars = (e: KeyboardEvent) => {
     if (!/[\d.]/.test(e.key)) e.preventDefault();
 };
+
 const handlePaste = (e: ClipboardEvent) => {
     const pastedVal = e.clipboardData?.getData('text');
 
     if (pastedVal && !/^\d+$/.test(pastedVal)) e.preventDefault();
 };
 
-onMounted(async () => {
-    const query = route.query;
+onMounted(() => {
+    void (async () => {
+        const query = route.query;
 
-    if (query.session_id && query.status === 'success') {
-        const amount = Number(query.amount);
-        const pType = query.paymentType as PaymentType;
+        if (query.session_id && query.status === 'success') {
+            const amount = Number(query.amount);
+            const pType = query.paymentType as PaymentType;
 
-        if (!isNaN(amount) && pType) {
-            await storeBalance.topUpBalance(query.session_id as string, 'success', amount, pType);
-            await router.replace({ query: {} });
+            if (!isNaN(amount) && pType) {
+                await storeBalance.topUpBalance(
+                    query.session_id as string,
+                    'success',
+                    amount,
+                    pType,
+                );
+                await router.replace({ query: {} });
+            }
         }
-    }
+    })();
 });
-watchEffect(async () => {
-    await storeBalance.displayBalance();
-});
+
+watch(
+    () => storeBalance.balance,
+    () => {
+        void storeBalance.displayBalance();
+    },
+    { immediate: true },
+);
+
 const onSubmit = async () => {
     if (topUpForm.value) {
         await handlePayment(topUpForm.value);
     }
 };
+
 const handleNextPage = async () => {
     if (currentPage.value < storeInventory.totalInventoryPages) {
         currentPage.value++;
         await loadPaginatedInventoryGoods();
     }
 };
+
 const handlePrevPage = async () => {
     if (currentPage.value > 1) {
         currentPage.value--;
@@ -93,7 +110,13 @@ const handlePrevPage = async () => {
                         </h2>
                         <p class="text-caption text-grey-6 q-mt-xs">Increase your gold reserves</p>
                     </div>
-                    <q-form ref="topUpForm" @submit.prevent="onSubmit">
+                    <q-form
+                        ref="topUpForm"
+                        @submit.prevent="
+                            () => {
+                                void onSubmit();
+                            }
+                        ">
                         <div class="select-box q-mt-lg">
                             <q-select
                                 v-model="paymentType"
@@ -105,7 +128,9 @@ const handlePrevPage = async () => {
                                 label="Payment Method"
                                 label-color="primary"
                                 class="custom-select"
-                                :rules="[(val) => !!val?.value || 'Required']"
+                                :rules="[
+                                    (val: { value: string } | null) => !!val?.value || 'Required',
+                                ]"
                                 @update:model-value="resetAmount" />
                         </div>
                         <div class="amount-control-wrapper column items-center q-mt-sm">
@@ -120,7 +145,9 @@ const handlePrevPage = async () => {
                                     :disable="
                                         !paymentType?.value ||
                                         topUpAmount <=
-                                            (paymentType ? (minAmounts[paymentType.value] ?? 0) : 0)
+                                            (paymentType
+                                                ? (minAmounts[paymentType.value as string] ?? 0)
+                                                : 0)
                                     "
                                     icon="remove"
                                     color="primary"
@@ -185,7 +212,11 @@ const handlePrevPage = async () => {
                         color="primary"
                         class="nav-btn"
                         :disable="currentPage <= 1"
-                        @click="handlePrevPage" />
+                        @click="
+                            () => {
+                                void handlePrevPage();
+                            }
+                        " />
                     <div class="page-info text-primary text-weight-bolder uppercase">
                         {{ currentPage }} / {{ storeInventory.totalInventoryPages }}
                     </div>
@@ -197,14 +228,18 @@ const handlePrevPage = async () => {
                         color="primary"
                         class="nav-btn"
                         :disable="currentPage >= storeInventory.totalInventoryPages"
-                        @click="handleNextPage" />
+                        @click="
+                            () => {
+                                void handleNextPage();
+                            }
+                        " />
                 </div>
             </div>
             <div class="side-box justify-end">
                 <div class="balance-panel">
                     <div
                         class="balance-wrapper"
-                        style=" display: flex; justify-content: flex-end;min-width: 8.75rem">
+                        style="display: flex; justify-content: flex-end; min-width: 8.75rem">
                         <div
                             v-if="storeBalance.pending && !storeBalance.balance.gold"
                             class="row q-gutter-x-md no-wrap items-center">
@@ -220,7 +255,6 @@ const handlePrevPage = async () => {
                         icon="add"
                         flat
                         dense
-                        round
                         color="primary"
                         size="sm"
                         @click="isOpen = true" />

@@ -44,30 +44,82 @@ a {
     text-decoration: inherit;
 }
 
-.q-field__bottom--animated {
-    position: static;
-    transform: translateY(0%);
-    padding-bottom: 1rem;
-}
-
-.q-field--with-bottom {
-    padding-bottom: 0;
-}
-
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
     appearance: none;
     margin: 0;
 }
 
+input[type='number'] {
+    appearance: textfield;
+}
+
 body {
+    position: relative;
+    min-height: 100vh;
     font-family: oblivionregular, serif;
+    color: $primary;
+    background-color: transparent;
+    overflow-x: hidden;
+}
+
+body::before {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
     background:
         linear-gradient(oklch(from $dark-page l c h / 23%), oklch(from $dark-page l c h / 23%)),
         url('/src/assets/images/common/bg-common.avif');
-    color: $primary;
-    background-color: #040405;
-    animation: fadeIn 0.5s ease-in-out;
+    background-position: center;
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    content: '';
+}
+
+.first-load {
+    body::before {
+        transform: scale(1.05);
+        filter: brightness(0.3) blur(0.9375rem);
+        opacity: 0;
+        animation: bgAestheticIn 1.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
+    }
+
+    #q-app {
+        opacity: 0;
+        animation: contentFadeIn 0.8s ease-out 0.5s forwards;
+    }
+}
+
+@keyframes bgAestheticIn {
+    to {
+        transform: scale(1);
+        filter: brightness(1) blur(0);
+        opacity: 1;
+    }
+}
+
+@keyframes contentFadeIn {
+    from {
+        transform: translateY(0.625rem);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.q-field__bottom--animated {
+    position: static;
+    transform: none;
+    padding-top: 0.5rem;
+    padding-bottom: 1rem;
+}
+
+.q-field--with-bottom {
+    padding-bottom: 0;
 }
 
 .font-secondary {
@@ -89,8 +141,4 @@ body {
     white-space: nowrap;
     clip-path: inset(50%);
     overflow: hidden;
-}
-
-input[type='number'] {
-    appearance: textfield;
 }

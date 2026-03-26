@@ -17,62 +17,68 @@ const router = useRouter();
 const storeGoods = useStoreGoods();
 const storeInventory = useStoreInventory();
 const storeBalance = useStoreBalance();
+
 const props = defineProps<{ modelValue: boolean }>();
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{ (e: 'update:modelValue', value: boolean): void }>();
+
 const { finalPrice } = useManageStash();
 const emberheartRubies = computed(() => Math.floor(finalPrice.value * 0.01));
 const gamblersLootbox = computed(() => Math.ceil(finalPrice.value * 0.001));
-const paymentTypes = computed(() => [
-    { label: `Gold (${finalPrice.value})`, value: 'gold' },
-    { label: `Emberheart Rubies (${emberheartRubies.value})`, value: 'emberheart_rubies' },
-    { label: `Gambler's Lootbox (${gamblersLootbox.value})`, value: 'gamblers_lootbox' },
-]);
+
+const paymentTypes = computed(
+    () =>
+        [
+            { label: `Gold (${finalPrice.value})`, value: 'gold' },
+            { label: `Emberheart Rubies (${emberheartRubies.value})`, value: 'emberheart_rubies' },
+            { label: `Gambler's Lootbox (${gamblersLootbox.value})`, value: 'gamblers_lootbox' },
+        ] as const,
+);
 
 type PaymentKey = 'gold' | 'emberheart_rubies' | 'gamblers_lootbox';
 
-const paymentType = ref<{ value: PaymentKey } | null>(null);
+const paymentType = ref<PaymentKey | null>(null);
 const paymentData = reactive<Record<PaymentKey, number>>({
     gold: finalPrice.value,
     emberheart_rubies: emberheartRubies.value,
     gamblers_lootbox: gamblersLootbox.value,
 });
+
 const validateFunds = (type: PaymentKey) => {
     const amount = paymentData[type];
-    const balance = storeBalance.balance[type];
-
-    if (amount > balance) {
-        return `Not enough ${type.replace('_', ' ')}`;
-    }
+    const balance = storeBalance.balance[type] ?? 0;
+    if (amount > balance) return `Not enough ${type.replace('_', ' ')}`;
 
     return true;
 };
-const tradeCancelled = ref(false);
-const trade = async () => {
-    const type = paymentType.value?.value;
 
+const tradeCancelled = ref(false);
+
+const trade = async () => {
+    const type = paymentType.value;
     if (!type) return;
     const cost = paymentData[type];
-
     await storeBalance.updateBalance(type, cost);
     await storeInventory.saveGoodsToInventory();
 };
+
 const handleTrade = async () => {
     tradeCancelled.value = false;
     pending.value = true;
 
-    if (!myForm.value || !paymentType.value?.value) {
+    if (!myForm.value || !paymentType.value) {
         pending.value = false;
 
         return;
     }
+
     try {
         const isValid = await myForm.value.validate();
-
         if (!isValid) {
             pending.value = false;
 
             return;
         }
+
         await delayUtils(2000);
 
         if (!tradeCancelled.value) {
@@ -94,6 +100,7 @@ const handleTrade = async () => {
         pending.value = false;
     }
 };
+
 const cancelTrade = () => {
     tradeCancelled.value = true;
     pending.value = false;
@@ -103,7 +110,7 @@ const cancelTrade = () => {
 <template>
     <Teleport to="body">
         <q-dialog
-            :model-value="modelValue"
+            :model-value="props.modelValue"
             backdrop-filter="blur(0.75rem) brightness(40%)"
             transition-show="scale"
             transition-hide="scale"
@@ -119,6 +126,7 @@ const cancelTrade = () => {
                         <ItemBalance class="balance no-border-balance" />
                     </div>
                 </div>
+
                 <q-form ref="myForm" class="q-gutter-md q-mt-lg" @submit.prevent="handleTrade">
                     <q-select
                         v-model="paymentType"
@@ -130,12 +138,13 @@ const cancelTrade = () => {
                         label="Currency of Choice *"
                         :rules="[
                             (val) => !!val || 'Select currency',
-                            (val) => validateFunds(val.value),
+                            (val) => (val ? validateFunds(val) : true),
                         ]">
                         <template #prepend>
                             <q-icon name="monetization_on" color="secondary" />
                         </template>
                     </q-select>
+
                     <div class="flex justify-between q-mt-xl">
                         <q-btn
                             type="submit"
@@ -151,6 +160,7 @@ const cancelTrade = () => {
                                 Trading...
                             </template>
                         </q-btn>
+
                         <q-btn
                             v-close-popup
                             label="Cancel"

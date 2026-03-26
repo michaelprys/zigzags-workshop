@@ -15,14 +15,15 @@ const storeGoods = useStoreGoods();
 const route = useRoute();
 const router = useRouter();
 const { addToStash } = useManageStash();
+
 const syncCategoriesFromUrl = (targetArray: Category[]) => {
     const queryCats = route.query.category;
     const activeCats = Array.isArray(queryCats) ? queryCats : queryCats ? [queryCats] : [];
-
     targetArray.forEach((cat) => {
         cat.active = activeCats.includes(cat.label);
     });
 };
+
 const categories = ref<Category[]>([
     { label: 'gadgets', active: false },
     { label: 'trinkets', active: false },
@@ -33,6 +34,21 @@ const categories = ref<Category[]>([
 
 syncCategoriesFromUrl(categories.value);
 const { currentPage, queryData, isPending, loadPaginatedGoods } = usePaginatedGoods(false);
+
+const isDelayedPending = ref(false);
+let pendingTimeout: ReturnType<typeof setTimeout> | null = null;
+
+watch(isPending, (val) => {
+    if (val) {
+        pendingTimeout = setTimeout(() => {
+            isDelayedPending.value = true;
+        }, 300);
+    } else {
+        if (pendingTimeout) clearTimeout(pendingTimeout);
+        isDelayedPending.value = false;
+    }
+});
+
 const { updateSelectedCategories, resetCategories } = useFilters(
     categories,
     loadPaginatedGoods,
@@ -40,6 +56,7 @@ const { updateSelectedCategories, resetCategories } = useFilters(
     router,
     currentPage,
 );
+
 const hasInitialLoaded = ref(false);
 const showEmptyState = computed(
     () => !isPending.value && hasInitialLoaded.value && queryData.value?.length === 0,
@@ -52,7 +69,6 @@ watch(
         if (!newGoods) return;
         newGoods.forEach((good) => {
             const img = new Image();
-
             img.onload = async () => {
                 if (img.complete) {
                     imgLoaded.value[good?.id] = true;
@@ -61,11 +77,12 @@ watch(
                     imgLoaded.value[good?.id] = true;
                 }
             };
-            img.src = good?.image_url;
+            img.src = good?.image_url ?? '';
         });
     },
     { immediate: true, deep: true },
 );
+
 watch(
     () => route.query.category,
     async () => {
@@ -73,6 +90,7 @@ watch(
         await loadPaginatedGoods();
     },
 );
+
 onMounted(async () => {
     await loadPaginatedGoods();
     hasInitialLoaded.value = true;
@@ -88,9 +106,9 @@ onMounted(async () => {
                 :update-selected-categories="updateSelectedCategories"
                 :reset-categories="resetCategories" />
             <div class="column flex-center q-px-md relative-position col-grow">
-                <template v-if="isPending || (queryData && queryData.length > 0)">
+                <template v-if="isDelayedPending || (queryData && queryData.length > 0)">
                     <ul class="flex flex-center q-gutter-lg q-mt-lg q-pl-none goods-list">
-                        <template v-if="isPending">
+                        <template v-if="isDelayedPending">
                             <li v-for="n in 8" :key="n" class="card">
                                 <q-card flat dark class="column no-wrap fit">
                                     <div class="image-wrapper">
@@ -133,7 +151,10 @@ onMounted(async () => {
                                                 square
                                                 class="skeleton-img skeleton-custom" />
                                         </Transition>
-                                        <q-img class="image" :src="good.image_url" />
+                                        <q-img
+                                            class="image"
+                                            :src="good?.image_url ?? ''"
+                                            transition="fade" />
                                     </div>
                                     <q-card-section>
                                         <div

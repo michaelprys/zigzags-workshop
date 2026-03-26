@@ -172,6 +172,7 @@ onMounted(() => {
     width: 100%;
     height: 100%;
     object-fit: cover;
+    transition: all 0.1s ease;
 }
 
 .content-panel {
