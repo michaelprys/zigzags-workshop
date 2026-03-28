@@ -54,9 +54,13 @@ input[type='number'] {
     appearance: textfield;
 }
 
+html {
+    background-color: #040405;
+}
+
 body {
     position: relative;
-    min-height: 100vh;
+    min-height: 100svh;
     font-family: oblivionregular, serif;
     color: $primary;
     background-color: transparent;
@@ -75,40 +79,6 @@ body::before {
     background-repeat: no-repeat;
     background-attachment: fixed;
     content: '';
-}
-
-.first-load {
-    body::before {
-        transform: scale(1.05);
-        filter: brightness(0.3) blur(0.9375rem);
-        opacity: 0;
-        animation: bgAestheticIn 1.8s cubic-bezier(0.4, 0, 0.2, 1) 0.2s forwards;
-    }
-
-    #q-app {
-        opacity: 0;
-        animation: contentFadeIn 0.8s ease-out 0.5s forwards;
-    }
-}
-
-@keyframes bgAestheticIn {
-    to {
-        transform: scale(1);
-        filter: brightness(1) blur(0);
-        opacity: 1;
-    }
-}
-
-@keyframes contentFadeIn {
-    from {
-        transform: translateY(0.625rem);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
 }
 
 .q-field__bottom--animated {

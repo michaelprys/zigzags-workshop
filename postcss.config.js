@@ -1,11 +1,7 @@
-
-
 import autoprefixer from 'autoprefixer';
-
 
 export default {
     plugins: [
-        
         autoprefixer({
             overrideBrowserslist: [
                 'last 4 Chrome versions',
@@ -18,12 +14,5 @@ export default {
                 'last 4 iOS versions',
             ],
         }),
-
-        
-        
-        
-        
-        
-        
     ],
 };

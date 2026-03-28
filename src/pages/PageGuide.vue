@@ -56,9 +56,12 @@
                                             Mad engineering, Explosive discounts, Sneaky deals.
                                         </span>
                                     </div>
-                                    <q-img
+                                    <img
                                         class="zigzag-img"
-                                        src="~assets/images/guide/zigzag.avif" />
+                                        src="~assets/images/guide/zigzag.avif"
+                                        width="1024"
+                                        height="1024"
+                                        alt="Zigzag photo" />
                                 </div>
                                 <div class="flex">
                                     <span class="subtitle q-mt-xl text-h4 text-primary">
@@ -115,9 +118,12 @@
                                 Accessing the market
                             </span>
                             <div class="accessing-wrapper q-mt-xl">
-                                <q-img
+                                <img
                                     class="goblin-man"
-                                    src="~assets/images/guide/goblin-man.avif" />
+                                    src="~assets/images/guide/goblin-man.avif"
+                                    width="1024"
+                                    height="1024"
+                                    alt="Shady male goblin photo" />
                                 <div class="accessing-content column" style="text-align: center">
                                     <span class="text-subtitle1" style="text-align: center">
                                         Open at all hours, always waiting
@@ -136,9 +142,12 @@
                                         Watch your pockets, sharp eyes everywhere!
                                     </span>
                                 </div>
-                                <q-img
+                                <img
                                     class="goblin-girl"
-                                    src="~assets/images/guide/goblin-girl.avif" />
+                                    src="~assets/images/guide/goblin-girl.avif"
+                                    width="1024"
+                                    height="1024"
+                                    alt="Shady female goblin photo" />
                             </div>
                             <div class="q-mt-xl">
                                 <span class="subtitle text-h4 text-primary">Important</span>
@@ -183,15 +192,17 @@
 }
 
 .zigzags-workshop-content {
-    max-width: 52.5rem;
+    max-width: 53rem;
     width: 100%;
     margin-inline: auto;
 }
 
 .zigzag-img {
+    aspect-ratio: 1 / 1;
     width: 16.5rem;
-    mix-blend-mode: screen;
+    height: auto;
     filter: contrast(103%) brightness(87%) grayscale(35%);
+    mix-blend-mode: screen;
 }
 
 .wrapper {
@@ -212,11 +223,12 @@
 
 .goblin-man,
 .goblin-girl {
+    aspect-ratio: 1 / 1;
     width: 15.625rem;
-    height: 15.625rem;
+    height: auto;
+    filter: contrast(103%);
     mix-blend-mode: screen;
     text-align: center;
-    filter: contrast(103%);
 }
 
 .accessing-wrapper {
@@ -252,7 +264,6 @@
     .goblin-man,
     .goblin-girl {
         width: 12rem;
-        height: 12rem;
     }
 
     .accessing-content {
@@ -278,7 +289,6 @@
     .goblin-man,
     .goblin-girl {
         width: 12rem;
-        height: 12rem;
     }
 
     .accessing-wrapper {
@@ -309,7 +319,6 @@
     .goblin-man,
     .goblin-girl {
         width: 10rem;
-        height: 10rem;
     }
 }
 </style>
